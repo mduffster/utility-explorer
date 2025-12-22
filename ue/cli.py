@@ -1006,5 +1006,117 @@ def focus(copy_mode):
         console.print("[dim]Try --copy mode to use claude.ai instead[/dim]")
 
 
+@cli.command()
+def status():
+    """Show week-to-date status with completed and pending tasks."""
+    from datetime import datetime, timedelta
+    from rich.panel import Panel
+    from rich.table import Table
+    from ue.db import (
+        get_tasks, get_tasks_completed_since, get_overdue_tasks,
+        get_block_targets, get_block_completions, get_week_block_summary
+    )
+
+    today = datetime.now().date()
+    week_start = today - timedelta(days=today.weekday())
+    week_start_str = week_start.isoformat()
+    day_name = today.strftime("%A")
+    day_of_week = today.weekday()  # 0=Mon, 6=Sun
+    days_elapsed = day_of_week + 1  # Mon=1, Sun=7
+
+    console.print()
+    console.print(Panel(
+        f"[bold]Week Status[/bold] - {week_start.strftime('%b %d')} to {today.strftime('%b %d')} ({day_name})",
+        style="cyan"
+    ))
+
+    # === BLOCKS SECTION ===
+    targets = get_block_targets()
+    if targets:
+        # Get all block completions this week
+        week_completions = get_block_completions(since=week_start_str)
+
+        # Count total block completions this week
+        total_block_completions = sum(1 for c in week_completions if c["status"] == "completed")
+
+        console.print(f"\n[bold]Blocks[/bold]")
+
+        for target in targets:
+            name = target["block_name"]
+            weekly = target["weekly_target"]
+            summary = get_week_block_summary(name)
+            completed = summary["completed"]
+
+            if weekly == 0:
+                # Daily block - show completed/days elapsed
+                target_str = f"{completed}/{days_elapsed}"
+                if completed >= days_elapsed:
+                    console.print(f"  [green]{name}: {target_str}[/green]")
+                elif completed >= days_elapsed - 1:
+                    console.print(f"  [yellow]{name}: {target_str}[/yellow]")
+                else:
+                    console.print(f"  [red]{name}: {target_str}[/red]")
+            else:
+                # Weekly target block
+                target_str = f"{completed}/{weekly}"
+                if completed >= weekly:
+                    console.print(f"  [green]{name}: {target_str}[/green]")
+                elif completed >= weekly // 2:
+                    console.print(f"  [yellow]{name}: {target_str}[/yellow]")
+                else:
+                    console.print(f"  [red]{name}: {target_str}[/red]")
+
+    # === TASKS SECTION ===
+    # Get completed tasks this week
+    completed_tasks = get_tasks_completed_since(week_start_str)
+
+    # Get pending tasks
+    pending = get_tasks(status="pending")
+    overdue = get_overdue_tasks()
+    overdue_ids = {t["id"] for t in overdue}
+
+    # Summary counts
+    console.print(f"\n[bold]Tasks[/bold]")
+    console.print(f"  Completed this week: [green]{len(completed_tasks)}[/green]")
+    console.print(f"  Still pending:       [yellow]{len(pending)}[/yellow]")
+    if overdue:
+        console.print(f"  Overdue:             [red]{len(overdue)}[/red]")
+
+    # Completed tasks list
+    if completed_tasks:
+        console.print(f"\n[bold green]Completed This Week ({len(completed_tasks)})[/bold green]")
+        for t in completed_tasks:
+            completed_dt = datetime.fromisoformat(t["completed_at"])
+            day_str = completed_dt.strftime("%a")
+            ws_str = f" [dim]({t['workstream']})[/dim]" if t["workstream"] else ""
+            console.print(f"  [green][/green] {t['title']}{ws_str} [dim]{day_str}[/dim]")
+    else:
+        console.print(f"\n[dim]No tasks completed this week yet[/dim]")
+
+    # Pending tasks list
+    if pending:
+        console.print(f"\n[bold yellow]Still To Do ({len(pending)})[/bold yellow]")
+        for t in pending:
+            due_str = ""
+            if t["due_date"]:
+                if t["id"] in overdue_ids:
+                    due_str = f" [red](overdue: {t['due_date']})[/red]"
+                elif t["due_date"] == today.isoformat():
+                    due_str = f" [yellow](due today)[/yellow]"
+                else:
+                    due_str = f" [dim](due {t['due_date']})[/dim]"
+
+            pri_marker = ""
+            if t["priority"] == "high":
+                pri_marker = "[red]![/red] "
+
+            ws_str = f" [dim]({t['workstream']})[/dim]" if t["workstream"] else ""
+            console.print(f"  {pri_marker}{t['title']}{ws_str}{due_str}")
+    else:
+        console.print(f"\n[green]All tasks complete![/green]")
+
+    console.print()
+
+
 if __name__ == "__main__":
     cli()

@@ -430,3 +430,19 @@ def get_overdue_tasks() -> list[dict]:
     ).fetchall()
     db.close()
     return [dict(row) for row in rows]
+
+
+def get_tasks_completed_since(since: str) -> list[dict]:
+    """Get tasks completed since a given date."""
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT * FROM tasks
+        WHERE status = 'done'
+        AND completed_at >= ?
+        ORDER BY completed_at DESC
+        """,
+        (since,),
+    ).fetchall()
+    db.close()
+    return [dict(row) for row in rows]
