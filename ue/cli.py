@@ -785,5 +785,28 @@ def review():
     ctx.invoke(pm)
 
 
+@cli.command()
+@click.option("--copy", "copy_mode", is_flag=True, help="Print context for manual copy/paste instead of calling API")
+def focus(copy_mode):
+    """Get AI-powered recommendation for what to focus on now."""
+    from ue.focus import get_focus, print_context
+
+    if copy_mode:
+        console.print(print_context())
+        console.print("\n[dim]Copy the above and paste into claude.ai[/dim]")
+        return
+
+    try:
+        result = get_focus()
+        console.print()
+        console.print(result)
+        console.print()
+    except ValueError as e:
+        console.print(f"[red]{e}[/red]")
+    except Exception as e:
+        console.print(f"[red]Error calling API: {e}[/red]")
+        console.print("[dim]Try --copy mode to use claude.ai instead[/dim]")
+
+
 if __name__ == "__main__":
     cli()
