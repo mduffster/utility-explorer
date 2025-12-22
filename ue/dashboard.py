@@ -166,3 +166,44 @@ def show_activity(days: int = 7, activity_type: str = None):
         )
 
     console.print(table)
+
+
+def show_calendar(days: int = 7):
+    """Show upcoming calendar events."""
+    from ue.db import get_db
+
+    now = datetime.now()
+    future = now + timedelta(days=days)
+
+    db = get_db()
+    items = db.execute(
+        """
+        SELECT subject, sender, timestamp, snippet FROM inbox_items
+        WHERE source = 'calendar'
+        AND timestamp >= ?
+        AND timestamp <= ?
+        ORDER BY timestamp ASC
+        """,
+        (now.isoformat(), future.isoformat()),
+    ).fetchall()
+    db.close()
+
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("Date", width=12)
+    table.add_column("Time", width=8)
+    table.add_column("Event", width=40)
+    table.add_column("With", width=30)
+
+    for item in items:
+        ts = item["timestamp"]
+        date_str = ts[:10] if ts else ""
+        time_str = ts[11:16] if ts and len(ts) > 11 else ""
+
+        table.add_row(
+            date_str,
+            time_str,
+            (item["subject"] or "")[:40],
+            (item["sender"] or "")[:30],
+        )
+
+    console.print(table)

@@ -96,12 +96,19 @@ def dashboard_short():
 
 
 @cli.command()
-@click.option("--source", "-s", help="Filter by source (gmail, calendar)")
 @click.option("--limit", "-n", default=20, help="Number of items to show")
-def inbox(source, limit):
-    """Show inbox items."""
+def inbox(limit):
+    """Show email inbox."""
     from ue.dashboard import show_inbox
-    show_inbox(source=source, limit=limit)
+    show_inbox(source="gmail", limit=limit)
+
+
+@cli.command()
+@click.option("--days", "-d", default=7, help="Days ahead to show")
+def calendar(days):
+    """Show upcoming calendar events."""
+    from ue.dashboard import show_calendar
+    show_calendar(days=days)
 
 
 @cli.command()
@@ -262,12 +269,12 @@ def task():
 
 @task.command("add")
 @click.argument("title")
-@click.option("--due", "-d", help="Due date (YYYY-MM-DD or 'wed', 'friday', etc.)")
+@click.option("--due", "-d", required=True, help="Due date (YYYY-MM-DD or 'wed', 'friday', etc.)")
 @click.option("--workstream", "-w", help="Workstream")
 @click.option("--priority", "-p", type=click.Choice(["low", "normal", "high"]), default="normal")
 @click.option("--notes", "-n", help="Additional notes")
 def task_add(title, due, workstream, priority, notes):
-    """Add a task with optional deadline."""
+    """Add a task with a deadline."""
     from datetime import datetime, timedelta
     from ue.db import add_task
 
