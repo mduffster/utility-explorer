@@ -275,43 +275,113 @@ def task():
     pass
 
 
+def parse_due_date(due: str) -> str:
+    """Parse natural language dates into YYYY-MM-DD format."""
+    from datetime import datetime, timedelta
+
+    if not due:
+        return None
+
+    due_lower = due.lower()
+    today = datetime.now().date()
+
+    day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    day_abbrevs = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
+    if due_lower == "today":
+        return today.isoformat()
+    elif due_lower == "tomorrow":
+        return (today + timedelta(days=1)).isoformat()
+    elif due_lower in day_names or due_lower in day_abbrevs:
+        # Find next occurrence of that day
+        if due_lower in day_abbrevs:
+            target_day = day_abbrevs.index(due_lower)
+        else:
+            target_day = day_names.index(due_lower)
+        days_ahead = target_day - today.weekday()
+        if days_ahead <= 0:
+            days_ahead += 7
+        return (today + timedelta(days=days_ahead)).isoformat()
+    else:
+        # Assume YYYY-MM-DD format
+        return due
+
+
 @task.command("add")
-@click.argument("title")
-@click.option("--due", "-d", required=True, help="Due date (YYYY-MM-DD or 'wed', 'friday', etc.)")
+@click.argument("title", required=False, default=None)
+@click.option("--due", "-d", help="Due date (YYYY-MM-DD or 'wed', 'friday', etc.)")
 @click.option("--workstream", "-w", help="Workstream")
-@click.option("--priority", "-p", type=click.Choice(["low", "normal", "high"]), default="normal")
+@click.option("--priority", "-p", type=click.Choice(["low", "normal", "high"]), default=None)
 @click.option("--notes", "-n", help="Additional notes")
 def task_add(title, due, workstream, priority, notes):
-    """Add a task with a deadline."""
-    from datetime import datetime, timedelta
+    """Add a task with a deadline. Run without args for interactive mode."""
+    from rich.prompt import Prompt
     from ue.db import add_task
+    from ue.config import load_config
 
-    # Parse natural language dates
-    due_date = None
-    if due:
-        due_lower = due.lower()
-        today = datetime.now().date()
+    # Interactive mode if no title provided
+    if title is None:
+        console.print("\n[bold]Add a task[/bold]\n")
 
-        day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-        day_abbrevs = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+        # 1. Get task title
+        title = Prompt.ask("  Task name")
+        if not title.strip():
+            console.print("[red]Task name required[/red]")
+            return
 
-        if due_lower == "today":
-            due_date = today.isoformat()
-        elif due_lower == "tomorrow":
-            due_date = (today + timedelta(days=1)).isoformat()
-        elif due_lower in day_names or due_lower in day_abbrevs:
-            # Find next occurrence of that day
-            if due_lower in day_abbrevs:
-                target_day = day_abbrevs.index(due_lower)
+        # 2. Select priority
+        priorities = ["low", "normal", "high"]
+        console.print("\n  [bold]Priority:[/bold]")
+        for i, p in enumerate(priorities, 1):
+            marker = ""
+            if p == "high":
+                marker = " [red](urgent)[/red]"
+            elif p == "normal":
+                marker = " [dim](default)[/dim]"
+            console.print(f"    {i}. {p}{marker}")
+
+        priority_choice = Prompt.ask("\n  Select priority", default="2")
+        try:
+            idx = int(priority_choice) - 1
+            if 0 <= idx < len(priorities):
+                priority = priorities[idx]
             else:
-                target_day = day_names.index(due_lower)
-            days_ahead = target_day - today.weekday()
-            if days_ahead <= 0:
-                days_ahead += 7
-            due_date = (today + timedelta(days=days_ahead)).isoformat()
-        else:
-            # Assume YYYY-MM-DD format
-            due_date = due
+                priority = "normal"
+        except ValueError:
+            priority = "normal"
+
+        # 3. Select workstream
+        config = load_config()
+        workstreams = list(config.get("workstreams", {}).keys())
+
+        if workstreams:
+            console.print("\n  [bold]Workstream:[/bold]")
+            console.print("    0. [dim](none)[/dim]")
+            for i, ws in enumerate(workstreams, 1):
+                console.print(f"    {i}. {ws}")
+
+            ws_choice = Prompt.ask("\n  Select workstream", default="0")
+            try:
+                idx = int(ws_choice)
+                if idx == 0:
+                    workstream = None
+                elif 1 <= idx <= len(workstreams):
+                    workstream = workstreams[idx - 1]
+                else:
+                    workstream = None
+            except ValueError:
+                workstream = None
+
+        # 4. Due date (optional)
+        due = Prompt.ask("\n  Due date (today, tomorrow, wed, 2024-01-15, or skip)", default="")
+        console.print()
+
+    # Parse due date
+    due_date = parse_due_date(due) if due else None
+
+    # Default priority if not set
+    if priority is None:
+        priority = "normal"
 
     task_id = add_task(
         title=title,
