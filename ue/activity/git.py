@@ -95,11 +95,13 @@ def sync_git_commits(since_days: int = 7) -> dict:
     commits = get_github_commits(since_days)
     repos_seen = set()
     total_logged = 0
+    skipped = 0
 
     for commit in commits:
         repos_seen.add(commit["repo"])
 
         if commit["hash"] in existing_hashes:
+            skipped += 1
             continue
 
         # Parse timestamp
@@ -120,4 +122,4 @@ def sync_git_commits(since_days: int = 7) -> dict:
         existing_hashes.add(commit["hash"])
         total_logged += 1
 
-    return {"logged": total_logged, "repos_scanned": len(repos_seen)}
+    return {"logged": total_logged, "repos_scanned": len(repos_seen), "skipped": skipped}

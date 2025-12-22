@@ -61,7 +61,11 @@ def sync(days):
 
     try:
         result = sync_gmail_sent(days=days)
-        console.print(f"  Gmail sent: {result['logged']} emails logged")
+        skipped = result.get('skipped', 0)
+        msg = f"  Gmail sent: {result['logged']} emails logged"
+        if skipped:
+            msg += f" ({skipped} already synced)"
+        console.print(msg)
     except Exception as e:
         console.print(f"  [red]Gmail sent error: {e}[/red]")
 
@@ -73,7 +77,11 @@ def sync(days):
 
     try:
         result = sync_git_commits(since_days=days)
-        console.print(f"  Git: {result['logged']} commits from {result['repos_scanned']} repos")
+        skipped = result.get('skipped', 0)
+        msg = f"  Git: {result['logged']} commits from {result['repos_scanned']} repos"
+        if skipped:
+            msg += f" ({skipped} already synced)"
+        console.print(msg)
     except Exception as e:
         console.print(f"  [red]Git error: {e}[/red]")
 
@@ -380,6 +388,119 @@ def task_cancel(task_id):
     from ue.db import cancel_task
     cancel_task(task_id)
     console.print(f"[yellow]Task #{task_id} cancelled[/yellow]")
+
+
+@cli.command()
+def did():
+    """Interactive block completion - pick a block you just did."""
+    from datetime import datetime
+    from rich.prompt import Prompt
+    from ue.db import get_block_targets, get_block_completions, log_block_completion, get_week_block_summary
+
+    targets = get_block_targets()
+
+    if not targets:
+        console.print("[dim]No blocks configured. Use 'ue block target <name> <weekly_count>'[/dim]")
+        return
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    today_completions = {c["block_name"]: c for c in get_block_completions(since=today)}
+
+    console.print("\n[bold]Blocks:[/bold]\n")
+    for i, t in enumerate(targets, 1):
+        name = t["block_name"]
+        weekly = t["weekly_target"]
+        summary = get_week_block_summary(name)
+
+        # Status indicator
+        if name in today_completions:
+            status = today_completions[name]["status"]
+            if status == "completed":
+                status_str = " [green]✓ done today[/green]"
+            elif status == "skipped":
+                status_str = " [yellow]skipped today[/yellow]"
+            else:
+                status_str = " [blue]partial today[/blue]"
+        else:
+            status_str = ""
+
+        # Progress
+        if weekly == 0:
+            progress = "[dim](daily)[/dim]"
+        else:
+            progress = f"[dim]({summary['completed']}/{weekly} this week)[/dim]"
+
+        console.print(f"  {i}. {name} {progress}{status_str}")
+
+    console.print()
+    choice = Prompt.ask(
+        "Which did you do? (number or 'q' to quit)",
+        default="q"
+    )
+
+    if choice.lower() == 'q':
+        return
+
+    try:
+        idx = int(choice) - 1
+        if 0 <= idx < len(targets):
+            block = targets[idx]
+            log_block_completion(block["block_name"], today, "completed")
+            console.print(f"\n[green]Logged: {block['block_name']} ✓[/green]")
+        else:
+            console.print("[red]Invalid number[/red]")
+    except ValueError:
+        console.print("[red]Invalid input[/red]")
+
+
+@cli.command()
+def done():
+    """Interactive task completion - pick a task to mark done."""
+    from datetime import datetime
+    from rich.prompt import Prompt
+    from ue.db import get_tasks, complete_task, get_overdue_tasks
+
+    tasks = get_tasks(status="pending")
+
+    if not tasks:
+        console.print("[dim]No pending tasks[/dim]")
+        return
+
+    overdue = {t["id"] for t in get_overdue_tasks()}
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    console.print("\n[bold]Pending tasks:[/bold]\n")
+    for i, t in enumerate(tasks, 1):
+        due_str = ""
+        if t["due_date"]:
+            if t["id"] in overdue:
+                due_str = f" [red](overdue: {t['due_date']})[/red]"
+            elif t["due_date"] == today:
+                due_str = f" [yellow](due today)[/yellow]"
+            else:
+                due_str = f" [dim](due {t['due_date']})[/dim]"
+
+        console.print(f"  {i}. {t['title']}{due_str}")
+
+    console.print()
+    choice = Prompt.ask(
+        "Which task is done? (number or 'q' to quit)",
+        default="q"
+    )
+
+    if choice.lower() == 'q':
+        return
+
+    try:
+        idx = int(choice) - 1
+        if 0 <= idx < len(tasks):
+            task = tasks[idx]
+            complete_task(task["id"])
+            console.print(f"\n[green]Completed: {task['title']}[/green]")
+        else:
+            console.print("[red]Invalid number[/red]")
+    except ValueError:
+        console.print("[red]Invalid input[/red]")
 
 
 # Block tracking commands

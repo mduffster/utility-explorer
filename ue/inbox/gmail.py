@@ -7,7 +7,7 @@ from typing import Optional
 from googleapiclient.discovery import build
 
 from ue.google_auth import get_google_credentials
-from ue.db import upsert_inbox_item, log_activity
+from ue.db import upsert_inbox_item, log_activity, activity_exists
 
 
 def get_gmail_service():
@@ -101,8 +101,14 @@ def sync_gmail_sent(days: int = 7, max_results: int = 50) -> dict:
 
     messages = results.get("messages", [])
     logged = 0
+    skipped = 0
 
     for msg_stub in messages:
+        # Check if this message was already logged
+        if activity_exists("gmail", "message_id", msg_stub["id"]):
+            skipped += 1
+            continue
+
         msg = service.users().messages().get(
             userId="me",
             id=msg_stub["id"],
@@ -132,4 +138,4 @@ def sync_gmail_sent(days: int = 7, max_results: int = 50) -> dict:
         )
         logged += 1
 
-    return {"logged": logged}
+    return {"logged": logged, "skipped": skipped}

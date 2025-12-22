@@ -119,6 +119,27 @@ def upsert_inbox_item(
     db.close()
 
 
+def activity_exists(source: str, metadata_key: str, metadata_value: str) -> bool:
+    """Check if an activity with matching source and metadata key/value exists."""
+    import json as json_mod
+    db = get_db()
+    rows = db.execute(
+        "SELECT metadata FROM activity_log WHERE source = ?",
+        (source,),
+    ).fetchall()
+    db.close()
+
+    for row in rows:
+        if row["metadata"]:
+            try:
+                meta = json_mod.loads(row["metadata"])
+                if meta.get(metadata_key) == metadata_value:
+                    return True
+            except Exception:
+                pass
+    return False
+
+
 def log_activity(
     activity_type: str,
     description: str,
