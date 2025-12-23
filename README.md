@@ -130,7 +130,7 @@ ue add-repo ~/projects/myrepo    # Track git commits from repo
 
 **Blocks** - Recurring activities with weekly targets. The system warns you when blocks are at risk of not being hit. Good for habits like exercise, meditation, or focused work time.
 
-**Workstreams** - Optional tags to categorize tasks and blocks (e.g., `ai-research`, `consulting`, `blog`). Configure in `~/.utility-explorer/config.json`.
+**Workstreams** - Optional tags to categorize tasks and blocks (e.g., `research`, `consulting`, `blog`). Configure in `~/.utility-explorer/config.json`.
 
 ## Data Storage
 
