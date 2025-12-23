@@ -1,0 +1,153 @@
+# Utility Explorer (ue)
+
+A personal productivity CLI for planning and task management. I originally built this to help keep track of things for my ADHD brain, but it's a general-purpose tool that's highly customizable and extensible.
+
+It aggregates info from Gmail, Google Calendar, and git into a unified dashboard with time-block tracking for recurring activities.
+
+## Features
+
+- **Task management** with natural language due dates
+- **Block tracking** for recurring habits/activities with weekly targets
+- **Morning/evening routines** (`ue am` / `ue pm`) for structured check-ins
+- **Gmail & Calendar sync** to see what needs attention
+- **Git commit tracking** across multiple repos
+- **AI-powered focus recommendations** (optional, requires Anthropic API key)
+
+## Dependencies
+
+- Python 3.10+
+- [Click](https://click.palletsprojects.com/) - CLI framework
+- [Rich](https://rich.readthedocs.io/) - Terminal formatting
+- [Google API Client](https://github.com/googleapis/google-api-python-client) - Gmail/Calendar integration
+- [Anthropic](https://docs.anthropic.com/en/docs/client-sdks) - AI focus recommendations (optional)
+
+## Installation
+
+```bash
+git clone https://github.com/yourusername/utility-explorer.git
+cd utility-explorer
+pip install -e .
+```
+
+## Setup
+
+Run `ue setup` for detailed instructions on configuring Google API credentials.
+
+**Quick version:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project and enable Gmail API + Google Calendar API
+3. Create OAuth credentials (Desktop application)
+4. Save the JSON as `~/.utility-explorer/credentials.json`
+5. Run `ue sync` to authenticate
+
+**For AI focus recommendations:**
+Set `ANTHROPIC_API_KEY` in your environment.
+
+## Quick Start
+
+```bash
+ue sync          # Pull data from Gmail, Calendar, git
+ue status        # Week-to-date summary
+ue am            # Morning standup
+ue pm            # Evening review
+```
+
+## Commands
+
+### Daily Workflow
+
+| Command | Description |
+|---------|-------------|
+| `ue am` | Morning standup - overdue tasks, at-risk blocks, today's calendar |
+| `ue pm` | Evening review - interactive block check-in, log wins |
+| `ue status` | Week-to-date progress on blocks and tasks |
+| `ue dashboard` | Main dashboard (alias: `ue d`) |
+| `ue focus` | AI recommendation for what to focus on now |
+
+### Quick Actions (Interactive)
+
+```bash
+ue did           # Pick a block you just completed
+ue done          # Pick a task to mark done
+ue task add      # Add a task (interactive prompts)
+```
+
+### Task Management
+
+```bash
+ue task add "title" -d tomorrow -p high -w ai-research
+ue task list              # List pending tasks
+ue task done 5            # Mark task #5 complete
+ue task cancel 5          # Cancel task #5
+```
+
+**Due dates** support natural language:
+- `today`, `tomorrow`
+- Day names: `monday`, `wed`, `friday`
+- Next week: `next monday`, `next wed`
+- ISO format: `2025-01-15`
+
+**Priority:** `low`, `normal`, `high`
+
+### Block Tracking
+
+Blocks are recurring activities you want to hit weekly (like workouts) or daily (like dog walks).
+
+```bash
+ue block target "Workout" 3        # 3x per week target
+ue block target "Dog Walk" 0       # Daily (0 = every day)
+ue block done "Workout"            # Mark completed today
+ue block skip "Workout" -r "sick"  # Mark skipped with reason
+ue block partial "Workout"         # Partially completed
+ue block list                      # Show weekly progress
+```
+
+### Inbox & Calendar
+
+```bash
+ue inbox              # Show email inbox
+ue calendar           # Show upcoming events
+ue sync               # Refresh data from Gmail/Calendar/git
+```
+
+### Activity Logging
+
+```bash
+ue log win "Shipped feature X"              # Log accomplishment
+ue log application "Company" -r "Engineer"  # Log job application
+ue activity                                 # View activity log
+```
+
+### Repository Tracking
+
+```bash
+ue add-repo ~/projects/myrepo    # Track git commits from repo
+```
+
+## Concepts
+
+**Tasks** - One-off items with optional deadlines and priorities. Good for things like "email back John" or "submit application."
+
+**Blocks** - Recurring activities with weekly targets. The system warns you when blocks are at risk of not being hit. Good for habits like exercise, meditation, or focused work time.
+
+**Workstreams** - Optional tags to categorize tasks and blocks (e.g., `ai-research`, `consulting`, `blog`). Configure in `~/.utility-explorer/config.json`.
+
+## Data Storage
+
+All data lives in `~/.utility-explorer/`:
+- `ue.db` - SQLite database
+- `credentials.json` - Google OAuth client credentials
+- `token.json` - Google OAuth tokens
+- `config.json` - User configuration (workstreams, tracked repos)
+
+## Customization
+
+The codebase is designed to be extended. Key files:
+- `ue/cli.py` - All CLI commands
+- `ue/db.py` - Database schema and queries
+- `ue/focus.py` - AI focus logic (swap in your own model)
+- `ue/inbox/` - Data ingestion from external sources
+
+## License
+
+MIT
