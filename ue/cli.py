@@ -6,6 +6,20 @@ from rich.console import Console
 console = Console()
 
 
+def get_effective_date():
+    """Get the 'effective' date, treating 2am as the day boundary.
+
+    If it's between midnight and 2am, returns yesterday's date.
+    This matches natural sleep cycles - 12:41am still feels like 'tonight'.
+    """
+    from datetime import datetime, timedelta
+
+    now = datetime.now()
+    if now.hour < 2:
+        return (now - timedelta(days=1)).date()
+    return now.date()
+
+
 @click.group()
 @click.version_option()
 def cli():
@@ -521,7 +535,7 @@ def did():
         console.print("[dim]No blocks configured. Use 'ue block target <name> <weekly_count>'[/dim]")
         return
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = get_effective_date().isoformat()
     today_completions = {c["block_name"]: c for c in get_block_completions(since=today)}
 
     console.print("\n[bold]Blocks:[/bold]\n")
@@ -585,7 +599,7 @@ def done():
         return
 
     overdue = {t["id"] for t in get_overdue_tasks()}
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = get_effective_date().isoformat()
 
     console.print("\n[bold]Pending tasks:[/bold]\n")
     for i, t in enumerate(tasks, 1):
@@ -639,7 +653,7 @@ def block_done(name, date, notes, minutes):
     from ue.db import log_block_completion
 
     if date is None:
-        date = datetime.now().strftime("%Y-%m-%d")
+        date = get_effective_date().isoformat()
 
     log_block_completion(
         block_name=name,
@@ -661,7 +675,7 @@ def block_skip(name, reason, date):
     from ue.db import log_block_completion
 
     if date is None:
-        date = datetime.now().strftime("%Y-%m-%d")
+        date = get_effective_date().isoformat()
 
     log_block_completion(
         block_name=name,
@@ -683,7 +697,7 @@ def block_partial(name, reason, date, minutes):
     from ue.db import log_block_completion
 
     if date is None:
-        date = datetime.now().strftime("%Y-%m-%d")
+        date = get_effective_date().isoformat()
 
     log_block_completion(
         block_name=name,
@@ -718,8 +732,9 @@ def block_list():
     from ue.db import get_block_targets, get_block_completions, get_week_block_summary
 
     targets = get_block_targets()
-    today = datetime.now().strftime("%Y-%m-%d")
-    week_start = (datetime.now() - timedelta(days=datetime.now().weekday())).strftime("%Y-%m-%d")
+    today = get_effective_date()
+    today_str = today.isoformat()
+    week_start = (today - timedelta(days=today.weekday())).isoformat()
 
     if not targets:
         console.print("[dim]No block targets set. Use 'ue block target <name> <weekly_count>'[/dim]")
@@ -733,7 +748,7 @@ def block_list():
     table.add_column("Stream", width=12)
 
     # Get today's completions
-    today_completions = {c["block_name"]: c for c in get_block_completions(since=today)}
+    today_completions = {c["block_name"]: c for c in get_block_completions(since=today_str)}
 
     for target in targets:
         name = target["block_name"]
@@ -779,7 +794,7 @@ def get_at_risk_blocks():
     from datetime import datetime, timedelta
     from ue.db import get_block_targets, get_week_block_summary
 
-    today = datetime.now().date()
+    today = get_effective_date()
     # Days left in week (0 = Monday, 6 = Sunday)
     day_of_week = today.weekday()
     days_left = 6 - day_of_week  # Including today
@@ -843,8 +858,8 @@ def am():
     from ue.db import get_upcoming_tasks, get_overdue_tasks
     from ue.inbox.calendar import get_upcoming_events
 
-    today = datetime.now()
-    today_str = today.strftime("%Y-%m-%d")
+    today = get_effective_date()
+    today_str = today.isoformat()
     day_name = today.strftime("%A")
     date_str = today.strftime("%B %d, %Y")
 
@@ -947,8 +962,8 @@ def pm():
     from ue.db import get_block_targets, get_block_completions, log_block_completion, get_activity
     from ue.activity.manual import log_win
 
-    today = datetime.now()
-    today_str = today.strftime("%Y-%m-%d")
+    today = get_effective_date()
+    today_str = today.isoformat()
 
     console.print()
     console.print(Panel("[bold]Evening Review[/bold]", style="magenta"))
@@ -1067,7 +1082,7 @@ def status():
         get_block_targets, get_block_completions, get_week_block_summary
     )
 
-    today = datetime.now().date()
+    today = get_effective_date()
     week_start = today - timedelta(days=today.weekday())
     week_start_str = week_start.isoformat()
     day_name = today.strftime("%A")
