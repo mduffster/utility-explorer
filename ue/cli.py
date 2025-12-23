@@ -61,9 +61,37 @@ def setup():
 
     if CREDENTIALS_PATH.exists():
         console.print("\n[green]credentials.json found![/green]")
-        console.print("Run [cyan]ue sync[/cyan] to authenticate and fetch data.")
     else:
         console.print(f"\n[yellow]Waiting for credentials.json at {CREDENTIALS_PATH}[/yellow]")
+
+    # GitHub CLI setup
+    console.print("\n[bold]GitHub CLI Setup[/bold]\n")
+    console.print("To track git commits across your repos:")
+    console.print()
+    console.print("1. Install GitHub CLI: [link]https://cli.github.com/[/link]")
+    console.print("2. Authenticate: [cyan]gh auth login[/cyan]")
+    console.print()
+
+    # Check if gh is installed and authenticated
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0:
+            console.print("[green]GitHub CLI authenticated![/green]")
+        else:
+            console.print("[yellow]GitHub CLI not authenticated. Run: gh auth login[/yellow]")
+    except FileNotFoundError:
+        console.print("[yellow]GitHub CLI not installed. Visit: https://cli.github.com/[/yellow]")
+    except Exception:
+        console.print("[yellow]Could not check GitHub CLI status[/yellow]")
+
+    console.print("\n" + "-" * 40)
+    console.print("\nRun [cyan]ue sync[/cyan] to fetch data from all sources.")
 
 
 def run_sync(days: int = 7, quiet: bool = False):
@@ -1009,6 +1037,26 @@ def am():
             age_days = (today - datetime.fromisoformat(item["timestamp"].replace("Z", ""))).days
             age_str = f"{age_days}d" if age_days > 0 else "today"
             console.print(f"  [{age_str}] {item['source']}: {(item['subject'] or '')[:50]}")
+
+    # Recent commits by repo
+    from ue.db import get_activity
+    import json as json_mod
+    week_start = today - timedelta(days=today.weekday())
+    week_activity = get_activity(activity_type="commit", since=week_start.isoformat())
+    if week_activity:
+        console.print("\n[bold]COMMITS THIS WEEK[/bold]")
+        # Group by repo
+        by_repo = {}
+        for act in week_activity:
+            if act.get("metadata"):
+                try:
+                    meta = json_mod.loads(act["metadata"])
+                    repo = meta.get("repo", "unknown")
+                    by_repo[repo] = by_repo.get(repo, 0) + 1
+                except Exception:
+                    pass
+        for repo, count in sorted(by_repo.items(), key=lambda x: -x[1]):
+            console.print(f"  {repo}: {count} commit{'s' if count != 1 else ''}")
 
     # Suggested focus
     console.print("\n[bold]SUGGESTED FOCUS[/bold]")

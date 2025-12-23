@@ -23,6 +23,7 @@ It aggregates info from Gmail, Google Calendar, and git into a unified dashboard
 - [Click](https://click.palletsprojects.com/) - CLI framework
 - [Rich](https://rich.readthedocs.io/) - Terminal formatting
 - [Google API Client](https://github.com/googleapis/google-api-python-client) - Gmail/Calendar integration
+- [GitHub CLI](https://cli.github.com/) - Git commit tracking (must be authenticated via `gh auth login`)
 - [Anthropic](https://docs.anthropic.com/en/docs/client-sdks) - AI focus recommendations (optional)
 
 ## Installation
