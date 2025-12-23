@@ -1,6 +1,6 @@
 # Utility Explorer (ue)
 
-A personal productivity CLI for planning and task management. I originally built this to help keep track of things for my ADHD brain, but it's a general-purpose tool that's highly customizable and extensible.
+A personal productivity CLI for planning and task management. I originally built this to help keep track of things for my ADHD brain, but it's a general-purpose tool that's highly customizable and extensible. The main difference between this tool and other producitivity tools is it tracks flex blocks that aren't necessarily completed daily to track progress against a weekly goal. This helps keep me from getting distracted by deep focus on one task that interests me at the expense of everything else. 
 
 It aggregates info from Gmail, Google Calendar, and git into a unified dashboard with time-block tracking for recurring activities.
 
