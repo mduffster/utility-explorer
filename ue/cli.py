@@ -790,31 +790,62 @@ def block_list():
 
 
 def get_at_risk_blocks():
-    """Calculate which blocks are at risk of not being hit this week."""
+    """Calculate which blocks are at risk or behind pace this week."""
     from datetime import datetime, timedelta
-    from ue.db import get_block_targets, get_week_block_summary
+    from ue.db import get_block_targets, get_week_block_summary, get_block_completions
+    from ue.config import load_config
 
     today = get_effective_date()
-    # Days left in week (0 = Monday, 6 = Sunday)
+    today_str = today.isoformat()
+    # Days elapsed and left in week (0 = Monday, 6 = Sunday)
     day_of_week = today.weekday()
+    days_elapsed = day_of_week + 1  # Mon=1, Tue=2, etc.
     days_left = 6 - day_of_week  # Including today
 
+    # Get workstream priorities
+    config = load_config()
+    workstreams = config.get("workstreams", {})
+
+    def get_ws_priority(workstream):
+        if workstream and workstream in workstreams:
+            return workstreams[workstream].get("priority", "low")
+        return None  # No workstream
+
     targets = get_block_targets()
+    today_completions = {c["block_name"]: c for c in get_block_completions(since=today_str)}
     at_risk = []
 
     for target in targets:
         name = target["block_name"]
         weekly_target = target["weekly_target"]
-
-        if weekly_target == 0:
-            # Daily block - not tracked as "at risk" in same way
-            continue
-
+        workstream = target.get("workstream")
+        ws_priority = get_ws_priority(workstream)
         summary = get_week_block_summary(name)
         completed = summary["completed"]
+
+        if weekly_target == 0:
+            # Daily block - flag if not done today
+            if name not in today_completions:
+                at_risk.append({
+                    "name": name,
+                    "target": "daily",
+                    "completed": completed,
+                    "remaining": 1,
+                    "days_left": days_left,
+                    "workstream": workstream,
+                    "status": "daily_pending"
+                })
+            continue
+
         remaining = weekly_target - completed
 
-        if remaining > 0 and remaining > days_left:
+        if remaining <= 0:
+            # Already hit target
+            continue
+
+        slack = days_left - remaining  # How many days we can skip and still hit target
+
+        if remaining > days_left:
             # Can't possibly hit target
             at_risk.append({
                 "name": name,
@@ -822,28 +853,43 @@ def get_at_risk_blocks():
                 "completed": completed,
                 "remaining": remaining,
                 "days_left": days_left,
+                "workstream": workstream,
                 "status": "impossible"
             })
-        elif remaining > 0 and remaining == days_left:
-            # Must do it every remaining day
+        elif slack <= 1:
+            # At risk - only 0 or 1 day of slack
             at_risk.append({
                 "name": name,
                 "target": weekly_target,
                 "completed": completed,
                 "remaining": remaining,
                 "days_left": days_left,
-                "status": "critical"
+                "workstream": workstream,
+                "status": "at_risk"
             })
-        elif remaining > 0 and day_of_week >= 3:  # Thursday or later
-            # It's late in week and still have items remaining
+        elif ws_priority in ("high", "mid") and completed < weekly_target / 2:
+            # High/mid priority and under halfway - try to do
             at_risk.append({
                 "name": name,
                 "target": weekly_target,
                 "completed": completed,
                 "remaining": remaining,
                 "days_left": days_left,
-                "status": "warning"
+                "workstream": workstream,
+                "status": "try_to_do"
             })
+        elif ws_priority == "low" and slack <= 2:
+            # Low priority - only flag when slack is tight (2 days or less)
+            at_risk.append({
+                "name": name,
+                "target": weekly_target,
+                "completed": completed,
+                "remaining": remaining,
+                "days_left": days_left,
+                "workstream": workstream,
+                "status": "try_to_do"
+            })
+        # No workstream and not urgent = don't show
 
     return at_risk
 
@@ -880,7 +926,7 @@ def am():
     if due_soon:
         console.print("\n[bold yellow]DEADLINES[/bold yellow]")
         for t in due_soon[:5]:
-            days_until = (datetime.strptime(t["due_date"], "%Y-%m-%d").date() - today.date()).days
+            days_until = (datetime.strptime(t["due_date"], "%Y-%m-%d").date() - today).days
             if days_until == 0:
                 due_str = "[yellow]today[/yellow]"
             elif days_until == 1:
@@ -889,19 +935,43 @@ def am():
                 due_str = f"in {days_until} days"
             console.print(f"    {t['title']} ({due_str})")
 
-    # At-risk blocks
+    # At-risk and behind-pace blocks
     at_risk = get_at_risk_blocks()
     if at_risk:
-        console.print("\n[bold red]BLOCKS AT RISK[/bold red]")
-        for block in at_risk:
+        from ue.config import load_config
+
+        # Sort by urgency: impossible > at_risk > try_to_do > daily_pending
+        # Then by workstream priority within each tier
+        config = load_config()
+        workstreams = config.get("workstreams", {})
+        priority_order = {"high": 0, "mid": 1, "low": 2}
+        status_order = {"impossible": 0, "at_risk": 1, "try_to_do": 2, "daily_pending": 3}
+
+        def sort_key(block):
+            ws = block.get("workstream")
+            ws_pri = priority_order.get(workstreams.get(ws, {}).get("priority", "low"), 2) if ws else 3
+            return (status_order.get(block["status"], 4), ws_pri)
+
+        sorted_blocks = sorted(at_risk, key=sort_key)
+
+        # Show all critical (impossible/at_risk), but limit try_to_do to keep total at 3 max
+        critical = [b for b in sorted_blocks if b["status"] in ("impossible", "at_risk")]
+        others = [b for b in sorted_blocks if b["status"] not in ("impossible", "at_risk")]
+        max_others = max(0, 3 - len(critical))
+        to_show = critical + others[:max_others]
+
+        console.print("\n[bold yellow]BLOCKS[/bold yellow]")
+        for block in to_show:
             if block["status"] == "impossible":
-                console.print(f"  [red]  {block['name']}: {block['completed']}/{block['target']} - can't hit target[/red]")
-            elif block["status"] == "critical":
-                console.print(f"  [red]  {block['name']}: {block['completed']}/{block['target']} - must do every remaining day[/red]")
-            else:
-                console.print(f"  [yellow]  {block['name']}: {block['completed']}/{block['target']} - {block['remaining']} left, {block['days_left']} days[/yellow]")
+                console.print(f"  [red]{block['name']}: {block['completed']}/{block['target']} - can't hit target[/red]")
+            elif block["status"] == "at_risk":
+                console.print(f"  [red]{block['name']}: {block['completed']}/{block['target']} - at risk[/red]")
+            elif block["status"] == "try_to_do":
+                console.print(f"  [yellow]{block['name']}: {block['completed']}/{block['target']} - try to do[/yellow]")
+            elif block["status"] == "daily_pending":
+                console.print(f"  [yellow]{block['name']}: not done today[/yellow]")
     else:
-        console.print("\n[green]All blocks on track this week[/green]")
+        console.print("\n[green]All blocks on track[/green]")
 
     # Today's calendar
     console.print("\n[bold]TODAY'S CALENDAR[/bold]")
@@ -933,22 +1003,37 @@ def am():
     # Suggested focus
     console.print("\n[bold]SUGGESTED FOCUS[/bold]")
     if at_risk:
-        critical = [b for b in at_risk if b["status"] in ("impossible", "critical")]
+        from ue.config import load_config
+        from ue.db import get_block_targets
+
+        # Get workstream priorities
+        config = load_config()
+        workstreams = config.get("workstreams", {})
+        priority_order = {"high": 0, "mid": 1, "low": 2}
+
+        # Get block -> workstream mapping
+        block_targets = {t["block_name"]: t.get("workstream") for t in get_block_targets()}
+
+        def get_priority(block):
+            ws = block_targets.get(block["name"])
+            if ws and ws in workstreams:
+                return priority_order.get(workstreams[ws].get("priority", "low"), 2)
+            return 3  # No workstream = lowest priority
+
+        # Priority order: impossible > at_risk > try_to_do > daily_pending
+        # Within each tier, sort by workstream priority
+        critical = sorted([b for b in at_risk if b["status"] in ("impossible", "at_risk")], key=get_priority)
+        try_to_do = sorted([b for b in at_risk if b["status"] == "try_to_do"], key=get_priority)
+        daily = sorted([b for b in at_risk if b["status"] == "daily_pending"], key=get_priority)
+
         if critical:
-            console.print(f"  [red]Priority: {critical[0]['name']} (at risk)[/red]")
-        else:
-            console.print(f"  [yellow]Consider: {at_risk[0]['name']} ({at_risk[0]['remaining']} remaining this week)[/yellow]")
+            console.print(f"  [red]Priority: {critical[0]['name']} ({critical[0]['completed']}/{critical[0]['target']} - at risk)[/red]")
+        elif try_to_do:
+            console.print(f"  [yellow]Try to do: {try_to_do[0]['name']} ({try_to_do[0]['completed']}/{try_to_do[0]['target']})[/yellow]")
+        elif daily:
+            console.print(f"  [yellow]Today: {', '.join(b['name'] for b in daily)}[/yellow]")
     else:
-        # Check for daily blocks not done today
-        targets = get_block_targets()
-        today_str = today.strftime("%Y-%m-%d")
-        today_completions = {c["block_name"]: c for c in get_block_completions(since=today_str)}
-        daily_blocks = [t for t in targets if t["weekly_target"] == 0]
-        undone_daily = [b for b in daily_blocks if b["block_name"] not in today_completions]
-        if undone_daily:
-            console.print(f"  Daily: {', '.join(b['block_name'] for b in undone_daily)}")
-        else:
-            console.print("  [dim]All daily blocks done - nice![/dim]")
+        console.print("  [green]All blocks on track - nice![/green]")
 
     console.print()
 
@@ -1114,7 +1199,7 @@ def status():
 
             if weekly == 0:
                 # Daily block - show completed/days elapsed
-                target_str = f"{completed}/{days_elapsed}"
+                target_str = f"{completed}/{days_elapsed} days"
                 if completed >= days_elapsed:
                     console.print(f"  [green]{name}: {target_str}[/green]")
                 elif completed >= days_elapsed - 1:
