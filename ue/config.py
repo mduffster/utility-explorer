@@ -43,3 +43,32 @@ def save_config(config: dict):
     """Save user configuration."""
     ensure_data_dir()
     CONFIG_PATH.write_text(json.dumps(config, indent=2))
+
+
+def get_last_sync() -> str | None:
+    """Get timestamp of last sync."""
+    config = load_config()
+    return config.get("last_sync")
+
+
+def set_last_sync(timestamp: str):
+    """Set timestamp of last sync."""
+    config = load_config()
+    config["last_sync"] = timestamp
+    save_config(config)
+
+
+def is_sync_stale(max_age_minutes: int = 60) -> bool:
+    """Check if sync data is stale (older than max_age_minutes)."""
+    from datetime import datetime
+
+    last_sync = get_last_sync()
+    if not last_sync:
+        return True
+
+    try:
+        last_dt = datetime.fromisoformat(last_sync)
+        age_minutes = (datetime.now() - last_dt).total_seconds() / 60
+        return age_minutes > max_age_minutes
+    except (ValueError, TypeError):
+        return True

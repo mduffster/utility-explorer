@@ -43,54 +43,86 @@ def setup():
         console.print(f"\n[yellow]Waiting for credentials.json at {CREDENTIALS_PATH}[/yellow]")
 
 
-@cli.command()
-@click.option("--days", default=7, help="Days of history to sync")
-def sync(days):
-    """Sync data from Gmail, Calendar, and git."""
+def run_sync(days: int = 7, quiet: bool = False):
+    """Run sync and record timestamp. Used by sync command and auto-sync."""
+    from datetime import datetime
     from ue.inbox.gmail import sync_gmail_inbox, sync_gmail_sent
     from ue.inbox.calendar import sync_calendar
     from ue.activity.git import sync_git_commits
+    from ue.config import set_last_sync
 
-    console.print("[bold]Syncing...[/bold]\n")
+    if not quiet:
+        console.print("[bold]Syncing...[/bold]\n")
 
     try:
         result = sync_gmail_inbox(days=days)
-        console.print(f"  Gmail inbox: {result['fetched']} emails")
+        if not quiet:
+            console.print(f"  Gmail inbox: {result['fetched']} emails")
     except Exception as e:
-        console.print(f"  [red]Gmail inbox error: {e}[/red]")
+        if not quiet:
+            console.print(f"  [red]Gmail inbox error: {e}[/red]")
 
     try:
         result = sync_gmail_sent(days=days)
         skipped = result.get('skipped', 0)
-        msg = f"  Gmail sent: {result['logged']} emails logged"
-        if skipped:
-            msg += f" ({skipped} already synced)"
-        console.print(msg)
+        if not quiet:
+            msg = f"  Gmail sent: {result['logged']} emails logged"
+            if skipped:
+                msg += f" ({skipped} already synced)"
+            console.print(msg)
     except Exception as e:
-        console.print(f"  [red]Gmail sent error: {e}[/red]")
+        if not quiet:
+            console.print(f"  [red]Gmail sent error: {e}[/red]")
 
     try:
         result = sync_calendar(days_ahead=days)
-        console.print(f"  Calendar: {result['fetched']} events")
+        if not quiet:
+            console.print(f"  Calendar: {result['fetched']} events")
     except Exception as e:
-        console.print(f"  [red]Calendar error: {e}[/red]")
+        if not quiet:
+            console.print(f"  [red]Calendar error: {e}[/red]")
 
     try:
         result = sync_git_commits(since_days=days)
         skipped = result.get('skipped', 0)
-        msg = f"  Git: {result['logged']} commits from {result['repos_scanned']} repos"
-        if skipped:
-            msg += f" ({skipped} already synced)"
-        console.print(msg)
+        if not quiet:
+            msg = f"  Git: {result['logged']} commits from {result['repos_scanned']} repos"
+            if skipped:
+                msg += f" ({skipped} already synced)"
+            console.print(msg)
     except Exception as e:
-        console.print(f"  [red]Git error: {e}[/red]")
+        if not quiet:
+            console.print(f"  [red]Git error: {e}[/red]")
 
-    console.print("\n[green]Sync complete![/green]")
+    set_last_sync(datetime.now().isoformat())
+
+    if not quiet:
+        console.print("\n[green]Sync complete![/green]")
+
+
+def auto_sync_if_stale():
+    """Auto-sync if data is stale. Returns True if sync was run."""
+    from ue.config import is_sync_stale
+
+    if is_sync_stale():
+        console.print("[dim]Auto-syncing...[/dim]")
+        run_sync(quiet=True)
+        console.print("[dim]Sync complete.[/dim]\n")
+        return True
+    return False
+
+
+@cli.command()
+@click.option("--days", default=7, help="Days of history to sync")
+def sync(days):
+    """Sync data from Gmail, Calendar, and git."""
+    run_sync(days=days, quiet=False)
 
 
 @cli.command()
 def dashboard():
     """Show the main dashboard."""
+    auto_sync_if_stale()
     from ue.dashboard import show_dashboard
     show_dashboard()
 
@@ -99,6 +131,7 @@ def dashboard():
 @cli.command("d")
 def dashboard_short():
     """Show the main dashboard (shortcut)."""
+    auto_sync_if_stale()
     from ue.dashboard import show_dashboard
     show_dashboard()
 
@@ -803,6 +836,7 @@ def get_at_risk_blocks():
 @cli.command()
 def am():
     """Morning standup - start your day."""
+    auto_sync_if_stale()
     from datetime import datetime, timedelta
     from rich.panel import Panel
     from ue.db import get_inbox_items, get_block_targets, get_block_completions
@@ -1024,6 +1058,7 @@ def focus(copy_mode):
 @cli.command()
 def status():
     """Show week-to-date status with completed and pending tasks."""
+    auto_sync_if_stale()
     from datetime import datetime, timedelta
     from rich.panel import Panel
     from rich.table import Table
