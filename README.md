@@ -152,6 +152,3 @@ The codebase is designed to be extended. Key files:
 - `ue/focus.py` - AI focus logic (swap in your own model)
 - `ue/inbox/` - Data ingestion from external sources
 
-## License
-
-MIT
