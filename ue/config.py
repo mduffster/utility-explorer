@@ -1,10 +1,18 @@
 """Configuration management."""
 
 import json
+import os
 from pathlib import Path
 
+# Check for demo mode - uses separate data directory
+DEMO_MODE = os.environ.get("UE_DEMO", "").lower() in ("1", "true", "yes")
+
 # All data lives here
-DATA_DIR = Path.home() / ".utility-explorer"
+if DEMO_MODE:
+    DATA_DIR = Path.home() / ".utility-explorer-demo"
+else:
+    DATA_DIR = Path.home() / ".utility-explorer"
+
 DB_PATH = DATA_DIR / "ue.db"
 CREDENTIALS_PATH = DATA_DIR / "credentials.json"
 TOKEN_PATH = DATA_DIR / "token.json"

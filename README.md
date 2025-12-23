@@ -4,6 +4,10 @@ A personal productivity CLI for planning and task management. I originally built
 
 It aggregates info from Gmail, Google Calendar, and git into a unified dashboard with time-block tracking for recurring activities.
 
+## Demo
+
+[![asciicast](https://asciinema.org/a/hfLqMm2NE0cGyEeyu6yytwMka.svg)](https://asciinema.org/a/hfLqMm2NE0cGyEeyu6yytwMka)
+
 ## Features
 
 - **Task management** with natural language due dates
