@@ -1,34 +1,30 @@
 # Roadmap
 
-## High-Value Extension: AI "What Now?" Command
+## Potential Integrations
 
-The hardest part of ADHD productivity isn't tracking - it's deciding what to do next. A `ue focus` command that:
+- **Slack** - Pull DMs and mentions into inbox
+- **Twitter/X** - Track DMs and mentions
+- **Todoist/Linear** - Sync external task managers
+- **Notion** - Pull tasks from databases
+- **Local git** - Option to scan local repos instead of GitHub API
 
-1. Analyzes current state (overdue tasks, blocks at risk, items needing response, today's calendar)
-2. Considers time of day and context
-3. Returns a single concrete next action with reasoning
+## Feature Ideas
 
-The `anthropic` dependency is already in pyproject.toml but unused.
-
-## Competitive Landscape (Dec 2024)
-
-| Product | Focus | Pricing |
-|---------|-------|---------|
-| Motion | Auto-schedule tasks into calendar | $19/mo |
-| Tiimo | Visual daily planner, AI task breakdown | Freemium |
-| OneTask | AI auto-prioritize, show only "now" tasks | Freemium |
-| Reclaim.ai | AI calendar blocking | Freemium |
-
-**What they lack (our differentiators):**
-- CLI-first (no context switch to GUI)
-- Track outputs (commits, sent emails, wins) not just inputs
-- Block tracking with weekly targets
-- Local-first, self-hosted data
-- Hackable/extensible
-
-## Other Ideas
-
+### AI Enhancements
 - `ue draft <id>` - AI-generate response for inbox item
+- Smarter focus recommendations based on time of day and energy levels
+
+### Monthly Tracking
+- `ue month` - Month-in-review command
+- Monthly block targets in addition to weekly
+- Trend analysis ("workout 4/5 weeks, blog slipping")
+
+### Task Improvements
 - Natural language task entry: `ue task "follow up with John next tuesday"`
-- Slack/Twitter inbox sources (schema already has placeholders)
-- Weekly trend analysis ("workout 4/5 weeks, blog slipping")
+- Recurring tasks (not just blocks)
+- Task dependencies
+
+### Other
+- `ue week` - Weekly summary/review
+- Export to markdown for journaling
+- Notifications/reminders (system notifications or email digest)
