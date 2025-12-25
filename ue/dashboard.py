@@ -10,6 +10,7 @@ from rich.text import Text
 
 from ue.db import get_inbox_items, get_activity
 from ue.config import load_config
+from ue.utils.dates import get_effective_date
 
 
 console = Console()
@@ -19,8 +20,9 @@ def show_dashboard():
     """Show the main dashboard."""
     config = load_config()
     now = datetime.now()
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-    week_start = (now - timedelta(days=7)).isoformat()
+    today = get_effective_date()
+    today_start = datetime.combine(today, datetime.min.time()).isoformat()
+    week_start = (today - timedelta(days=7)).isoformat()
 
     # Get inbox items needing response
     needs_response = get_inbox_items(needs_response=True, limit=20)
@@ -32,7 +34,7 @@ def show_dashboard():
     # Header
     console.print()
     console.print(Panel(
-        f"[bold]Utility Explorer[/bold] - {now.strftime('%A, %B %d, %Y')}",
+        f"[bold]Utility Explorer[/bold] - {today.strftime('%A, %B %d, %Y')}",
         style="blue"
     ))
 
@@ -147,7 +149,8 @@ def show_inbox(source: str = None, limit: int = 20):
 
 def show_activity(days: int = 7, activity_type: str = None):
     """Show activity log."""
-    since = (datetime.now() - timedelta(days=days)).isoformat()
+    today = get_effective_date()
+    since = (today - timedelta(days=days)).isoformat()
     items = get_activity(since=since, activity_type=activity_type)
 
     table = Table(show_header=True, header_style="bold")
@@ -172,7 +175,8 @@ def show_calendar(days: int = 7):
     """Show upcoming calendar events."""
     from ue.db import get_db
 
-    now = datetime.now()
+    today = get_effective_date()
+    now = datetime.combine(today, datetime.min.time())
     future = now + timedelta(days=days)
 
     db = get_db()
