@@ -98,12 +98,46 @@ All data lives in `~/.utility-explorer/` (or `~/.utility-explorer-demo/` in demo
 
 ### Module Structure
 
-**ue/cli.py** - Click-based CLI with all command definitions. Key functions:
+```
+ue/
+├── cli.py              # Main CLI group + setup command + imports
+├── commands/
+│   ├── task.py         # task group (add, list, done, cancel) + done standalone
+│   ├── block.py        # block group (done, skip, partial, target, list) + did standalone
+│   ├── routines.py     # am, pm, status, focus, review
+│   ├── sync.py         # sync, dashboard, d, inbox, calendar, activity, add_repo
+│   ├── log.py          # log group (application, win) + mark group (respond, done, workstream)
+│   └── demo.py         # demo-setup, demo-reset
+└── utils/
+    ├── display.py      # console, LOGO, print_logo()
+    ├── dates.py        # parse_due_date(), get_effective_date()
+    └── analysis.py     # get_at_risk_blocks()
+```
+
+**ue/cli.py** - Main Click group with `setup` command. Imports and registers all commands from `commands/` modules.
+
+**ue/utils/display.py** - Rich console instance and logo display.
+
+**ue/utils/dates.py** - Date utilities:
 - `get_effective_date()` - Returns "effective" date with 2am day boundary (for night owls)
 - `parse_due_date()` - Natural language date parsing including "next monday" etc.
+
+**ue/utils/analysis.py** - Block analysis:
 - `get_at_risk_blocks()` - Calculates block status (impossible, at_risk, try_to_do, daily_pending)
+
+**ue/commands/sync.py** - Sync and display commands:
+- `run_sync()` - Core sync logic
 - `auto_sync_if_stale()` - Auto-syncs if data is older than 1 hour
-- `print_logo()` - Displays the utility-explorer ASCII logo
+
+**ue/commands/routines.py** - Daily routine commands (am, pm, status, focus, review)
+
+**ue/commands/task.py** - Task management commands
+
+**ue/commands/block.py** - Block tracking commands
+
+**ue/commands/log.py** - Manual logging (log, mark groups)
+
+**ue/commands/demo.py** - Demo mode setup/reset
 
 **ue/db.py** - SQLite database layer. Schema defines 5 tables:
 - `inbox_items` - Emails and calendar events needing attention
@@ -168,8 +202,10 @@ All data lives in `~/.utility-explorer/` (or `~/.utility-explorer-demo/` in demo
 ### Patterns
 
 - CLI uses Click with command groups (`task`, `block`, `log`, `mark`)
+- Commands organized into modules under `ue/commands/`
+- Shared utilities in `ue/utils/` (display, dates, analysis)
 - Rich library for tables, panels, colored output
 - Lazy imports in CLI commands to keep `ue --help` fast
 - SQLite with upsert patterns for idempotent syncing
-- Natural language date parsing in `parse_due_date()`
+- Natural language date parsing in `ue/utils/dates.py`
 - Environment variable `UE_DEMO=1` for demo mode with separate data directory

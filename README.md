@@ -147,9 +147,24 @@ All data lives in `~/.utility-explorer/`:
 
 ## Customization
 
-The codebase is designed to be extended. Key files:
-- `ue/cli.py` - All CLI commands
-- `ue/db.py` - Database schema and queries
-- `ue/focus.py` - AI focus logic (swap in your own model)
-- `ue/inbox/` - Data ingestion from external sources
+The codebase is designed to be extended. Key directories and files:
+
+```
+ue/
+├── cli.py              # Main CLI entry point + setup command
+├── commands/           # CLI command modules
+│   ├── task.py         # Task management (add, list, done, cancel)
+│   ├── block.py        # Block tracking (done, skip, partial, target)
+│   ├── routines.py     # Daily routines (am, pm, status, focus)
+│   ├── sync.py         # Sync + display (sync, dashboard, inbox, calendar)
+│   ├── log.py          # Activity logging (log, mark)
+│   └── demo.py         # Demo mode setup/reset
+├── utils/              # Shared utilities
+│   ├── display.py      # Rich console + logo
+│   ├── dates.py        # Date parsing + effective date logic
+│   └── analysis.py     # Block risk calculations
+├── db.py               # Database schema and queries
+├── focus.py            # AI focus logic (swap in your own model)
+└── inbox/              # Data ingestion from external sources
+```
 
