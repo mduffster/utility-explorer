@@ -123,6 +123,16 @@ ue log application "Company" -r "Engineer"  # Log job application
 ue activity                                 # View activity log
 ```
 
+### Workstream Management
+
+```bash
+ue workstream add work -p high       # Add workstream with priority
+ue workstream add health -p low      # Priority: high, mid, low
+ue workstream list                   # List all workstreams
+ue workstream set work -p mid        # Change priority
+ue workstream remove old-project     # Remove a workstream
+```
+
 ### Repository Tracking
 
 ```bash
@@ -135,7 +145,7 @@ ue add-repo ~/projects/myrepo    # Track git commits from repo
 
 **Blocks** - Recurring activities with weekly targets. The system warns you when blocks are at risk of not being hit. Good for habits like exercise, meditation, or focused work time.
 
-**Workstreams** - Optional tags to categorize tasks and blocks (e.g., `research`, `consulting`, `blog`). Configure in `~/.utility-explorer/config.json`.
+**Workstreams** - User-defined categories to organize tasks and blocks. Create with `ue workstream add`. Each has a priority (high/mid/low) that affects focus recommendations.
 
 ## Data Storage
 
@@ -158,6 +168,7 @@ ue/
 │   ├── routines.py     # Daily routines (am, pm, status, focus)
 │   ├── sync.py         # Sync + display (sync, dashboard, inbox, calendar)
 │   ├── log.py          # Activity logging (log, mark)
+│   ├── workstream.py   # Workstream management (add, list, remove, set)
 │   └── demo.py         # Demo mode setup/reset
 ├── utils/              # Shared utilities
 │   ├── display.py      # Rich console + logo

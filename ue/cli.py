@@ -84,6 +84,7 @@ from ue.commands.block import block, did
 from ue.commands.routines import am, pm, review, status, focus
 from ue.commands.log import log, mark
 from ue.commands.demo import demo_setup, demo_reset
+from ue.commands.workstream import workstream
 
 # Sync/display commands
 cli.add_command(sync)
@@ -116,6 +117,9 @@ cli.add_command(mark)
 # Demo commands
 cli.add_command(demo_setup)
 cli.add_command(demo_reset)
+
+# Workstream commands
+cli.add_command(workstream)
 
 
 if __name__ == "__main__":

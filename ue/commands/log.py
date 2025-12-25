@@ -97,8 +97,13 @@ def mark_responded(item_id):
 def mark_workstream(item_id, workstream):
     """Assign a workstream to an item."""
     from ue.db import get_db
+    from ue.config import load_config
 
-    valid = ["ai-research", "terrasol", "blog", "consulting"]
+    config = load_config()
+    valid = list(config.get("workstreams", {}).keys())
+    if not valid:
+        console.print("[yellow]No workstreams configured. Use 'ue workstream add' first.[/yellow]")
+        return
     if workstream not in valid:
         console.print(f"[red]Invalid workstream. Choose from: {', '.join(valid)}[/red]")
         return

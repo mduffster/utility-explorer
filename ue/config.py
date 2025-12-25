@@ -36,12 +36,7 @@ def load_config() -> dict:
     if CONFIG_PATH.exists():
         return json.loads(CONFIG_PATH.read_text())
     return {
-        "workstreams": {
-            "ai-research": {"priority": "high", "color": "green"},
-            "terrasol": {"priority": "mid", "color": "yellow"},
-            "blog": {"priority": "mid", "color": "blue"},
-            "consulting": {"priority": "low", "color": "dim"},
-        },
+        "workstreams": {},  # User adds their own via `ue workstream add`
         "git_repos": [],  # paths to repos to track
         "watch_dirs": [],  # paths to watch for new docs
     }

@@ -74,6 +74,15 @@ ue focus              # Get AI recommendation for what to focus on
 ue focus --copy       # Print context for manual paste to claude.ai
 ```
 
+### Workstream Management
+```bash
+ue workstream list                    # List all workstreams
+ue workstream add work -p high        # Add with priority (high, mid, low)
+ue workstream add health -p low -c cyan  # Add with priority and color
+ue workstream set work -p mid         # Change priority
+ue workstream remove old-project      # Remove a workstream
+```
+
 ### Repository Tracking
 ```bash
 ue add-repo ~/projects/myrepo  # Add git repo for commit tracking
@@ -107,6 +116,7 @@ ue/
 │   ├── routines.py     # am, pm, status, focus, review
 │   ├── sync.py         # sync, dashboard, d, inbox, calendar, activity, add_repo
 │   ├── log.py          # log group (application, win) + mark group (respond, done, workstream)
+│   ├── workstream.py   # workstream group (add, list, remove, set)
 │   └── demo.py         # demo-setup, demo-reset
 └── utils/
     ├── display.py      # console, LOGO, print_logo()
@@ -136,6 +146,8 @@ ue/
 **ue/commands/block.py** - Block tracking commands
 
 **ue/commands/log.py** - Manual logging (log, mark groups)
+
+**ue/commands/workstream.py** - Workstream management (add, list, remove, set priority/color)
 
 **ue/commands/demo.py** - Demo mode setup/reset
 
@@ -180,7 +192,7 @@ ue/
 
 **Auto-Sync**: Commands `ue am`, `ue status`, and `ue dashboard` automatically sync if data is older than 1 hour.
 
-**Workstreams**: Activities can be tagged with workstreams defined in config. Each workstream has a priority (high, mid, low) that affects suggested focus ordering.
+**Workstreams**: User-defined categories for organizing tasks and blocks. Created via `ue workstream add`. Each workstream has a priority (high, mid, low) that affects suggested focus ordering. Stored in `config.json`.
 
 **Block Status Tiers**:
 - `impossible` - Can't hit weekly target (not enough days left)
