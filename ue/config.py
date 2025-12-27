@@ -39,6 +39,8 @@ def load_config() -> dict:
         "workstreams": {},  # User adds their own via `ue workstream add`
         "git_repos": [],  # paths to repos to track
         "watch_dirs": [],  # paths to watch for new docs
+        "git_tracking_mode": "auto",  # "auto" | "local" | "github" | "both"
+        "git_hint_dismissed": False,  # whether user dismissed setup hint
     }
 
 
@@ -75,3 +77,29 @@ def is_sync_stale(max_age_minutes: int = 60) -> bool:
         return age_minutes > max_age_minutes
     except (ValueError, TypeError):
         return True
+
+
+def get_git_tracking_mode() -> str:
+    """Get the git tracking mode from config."""
+    config = load_config()
+    return config.get("git_tracking_mode", "auto")
+
+
+def set_git_tracking_mode(mode: str):
+    """Set the git tracking mode."""
+    config = load_config()
+    config["git_tracking_mode"] = mode
+    save_config(config)
+
+
+def is_git_hint_dismissed() -> bool:
+    """Check if user dismissed the git setup hint."""
+    config = load_config()
+    return config.get("git_hint_dismissed", False)
+
+
+def dismiss_git_hint():
+    """Mark the git setup hint as dismissed."""
+    config = load_config()
+    config["git_hint_dismissed"] = True
+    save_config(config)

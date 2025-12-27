@@ -131,6 +131,21 @@ def am():
                     pass
         for repo, count in sorted(by_repo.items(), key=lambda x: -x[1]):
             console.print(f"  {repo}: {count} commit{'s' if count != 1 else ''}")
+    else:
+        # Empty state handling - show hint once if git not configured
+        from ue.config import is_git_hint_dismissed, load_config
+        from ue.activity.git import is_github_cli_available
+
+        config = load_config()
+        repos = config.get("git_repos", [])
+        gh_available = is_github_cli_available()
+
+        # Only show hint if: no repos AND gh not available AND hint not dismissed
+        if not repos and not gh_available and not is_git_hint_dismissed():
+            console.print("\n[bold dim]COMMITS[/bold dim]")
+            console.print("  [dim]No git tracking configured.[/dim]")
+            console.print("  [dim]Run 'ue add-repo <path>' or 'gh auth login'[/dim]")
+            console.print("  [dim]('ue git dismiss' to hide this)[/dim]")
 
     # Suggested focus
     console.print("\n[bold]SUGGESTED FOCUS[/bold]")

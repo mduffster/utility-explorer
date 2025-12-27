@@ -23,7 +23,7 @@ It aggregates info from Gmail, Google Calendar, and git into a unified dashboard
 - [Click](https://click.palletsprojects.com/) - CLI framework
 - [Rich](https://rich.readthedocs.io/) - Terminal formatting
 - [Google API Client](https://github.com/googleapis/google-api-python-client) - Gmail/Calendar integration
-- [GitHub CLI](https://cli.github.com/) - Git commit tracking (must be authenticated via `gh auth login`)
+- [GitHub CLI](https://cli.github.com/) - Git commit tracking via GitHub (optional, or use local repo tracking)
 - [Anthropic](https://docs.anthropic.com/en/docs/client-sdks) - AI focus recommendations (optional)
 
 ## Installation
@@ -133,11 +133,23 @@ ue workstream set work -p mid        # Change priority
 ue workstream remove old-project     # Remove a workstream
 ```
 
-### Repository Tracking
+### Git Tracking
+
+Track commits via GitHub API or local repositories:
 
 ```bash
-ue add-repo ~/projects/myrepo    # Track git commits from repo
+ue git mode                      # Show current mode and status
+ue git mode github               # Track via GitHub API (requires gh CLI)
+ue git mode local                # Track local repos only
+ue git mode both                 # Track both sources (deduplicated)
+ue git mode auto                 # GitHub first, local fallback (default)
+
+ue add-repo ~/projects/myrepo    # Add a local repo to track
+ue git repos                     # List tracked local repos
+ue git remove-repo ~/projects/myrepo  # Remove a repo
 ```
+
+**GitHub mode** requires [GitHub CLI](https://cli.github.com/) authenticated via `gh auth login`.
 
 ## Concepts
 
