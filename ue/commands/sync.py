@@ -46,11 +46,17 @@ def run_sync(days: int = 7, quiet: bool = False):
     try:
         result = sync_git_commits(since_days=days)
         skipped = result.get('skipped', 0)
+        mode = result.get('mode', 'unknown')
         if not quiet:
-            msg = f"  Git: {result['logged']} commits from {result['repos_scanned']} repos"
-            if skipped:
-                msg += f" ({skipped} already synced)"
-            console.print(msg)
+            if result['logged'] > 0 or result['repos_scanned'] > 0:
+                mode_str = f" [{mode}]" if mode != "auto" else ""
+                msg = f"  Git{mode_str}: {result['logged']} commits from {result['repos_scanned']} repos"
+                if skipped:
+                    msg += f" ({skipped} already synced)"
+                console.print(msg)
+            elif result.get('has_repos') or result.get('github_available'):
+                console.print("  Git: no new commits")
+            # If neither repos nor gh configured, stay silent
     except Exception as e:
         if not quiet:
             console.print(f"  [red]Git error: {e}[/red]")

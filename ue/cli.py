@@ -45,12 +45,17 @@ def setup():
     else:
         console.print(f"\n[yellow]Waiting for credentials.json at {CREDENTIALS_PATH}[/yellow]")
 
-    # GitHub CLI setup
-    console.print("\n[bold]GitHub CLI Setup[/bold]\n")
-    console.print("To track git commits across your repos:")
+    # Git commit tracking setup
+    console.print("\n[bold]Git Commit Tracking[/bold]\n")
+    console.print("Track commits via GitHub API or local repositories:\n")
+    console.print("[bold]Option 1 - GitHub[/bold] (tracks all your GitHub repos):")
+    console.print("  1. Install GitHub CLI: [link]https://cli.github.com/[/link]")
+    console.print("  2. Authenticate: [cyan]gh auth login[/cyan]")
     console.print()
-    console.print("1. Install GitHub CLI: [link]https://cli.github.com/[/link]")
-    console.print("2. Authenticate: [cyan]gh auth login[/cyan]")
+    console.print("[bold]Option 2 - Local repos[/bold]:")
+    console.print("  [cyan]ue add-repo ~/path/to/repo[/cyan]")
+    console.print()
+    console.print("Configure mode: [cyan]ue git mode <auto|local|github|both>[/cyan]")
     console.print()
 
     # Check if gh is installed and authenticated
@@ -85,6 +90,7 @@ from ue.commands.routines import am, pm, review, status, focus
 from ue.commands.log import log, mark
 from ue.commands.demo import demo_setup, demo_reset
 from ue.commands.workstream import workstream
+from ue.commands.git_cmd import git
 
 # Sync/display commands
 cli.add_command(sync)
@@ -120,6 +126,9 @@ cli.add_command(demo_reset)
 
 # Workstream commands
 cli.add_command(workstream)
+
+# Git commands
+cli.add_command(git)
 
 
 if __name__ == "__main__":
