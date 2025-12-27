@@ -179,3 +179,13 @@ ue/
 └── inbox/              # Data ingestion from external sources
 ```
 
+## Contributing 🤝
+
+Contributions welcome! The codebase is modular:
+
+- **New commands** → `ue/commands/` (see existing modules for patterns)
+- **Utility functions** → `ue/utils/` (shared helpers, display, date logic)
+- **CLI registration** → Add your command to `ue/cli.py`
+
+Open an issue first for large changes to discuss approach.
+
