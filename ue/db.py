@@ -372,6 +372,69 @@ def cancel_task(task_id: int):
     db.close()
 
 
+def update_task(
+    task_id: int,
+    title: Optional[str] = None,
+    due_date: Optional[str] = None,
+    workstream: Optional[str] = None,
+    priority: Optional[str] = None,
+    notes: Optional[str] = None,
+    clear_due: bool = False,
+    clear_workstream: bool = False,
+) -> bool:
+    """Update a task. Only updates fields that are provided.
+
+    Use clear_due=True to remove the due date.
+    Use clear_workstream=True to remove the workstream.
+    Returns True if task was found and updated.
+    """
+    db = get_db()
+
+    # Build update query dynamically
+    updates = []
+    params = []
+
+    if title is not None:
+        updates.append("title = ?")
+        params.append(title)
+    if due_date is not None:
+        updates.append("due_date = ?")
+        params.append(due_date)
+    elif clear_due:
+        updates.append("due_date = NULL")
+    if workstream is not None:
+        updates.append("workstream = ?")
+        params.append(workstream)
+    elif clear_workstream:
+        updates.append("workstream = NULL")
+    if priority is not None:
+        updates.append("priority = ?")
+        params.append(priority)
+    if notes is not None:
+        updates.append("notes = ?")
+        params.append(notes)
+
+    if not updates:
+        db.close()
+        return False
+
+    params.append(task_id)
+    query = f"UPDATE tasks SET {', '.join(updates)} WHERE id = ?"
+    cursor = db.execute(query, params)
+    db.commit()
+    updated = cursor.rowcount > 0
+    db.close()
+    return updated
+
+
+def get_task(task_id: int) -> Optional[dict]:
+    """Get a single task by ID."""
+    db = get_db()
+    row = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    db.close()
+    return dict(row) if row else None
+
+
 def get_tasks(
     status: str = "pending",
     workstream: Optional[str] = None,

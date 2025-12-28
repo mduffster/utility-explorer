@@ -85,14 +85,18 @@ ue task add      # Add a task (interactive prompts)
 ```bash
 ue task add "title" -d tomorrow -p high -w ai-research
 ue task list              # List pending tasks
+ue task edit 5 -d friday  # Change due date
+ue task edit 5 -p high    # Change priority
+ue task edit 5 -d none    # Clear due date
 ue task done 5            # Mark task #5 complete
 ue task cancel 5          # Cancel task #5
 ```
 
 **Due dates** support natural language:
 - `today`, `tomorrow`
-- Day names: `monday`, `wed`, `friday`
-- Next week: `next monday`, `next wed`
+- Day names: `monday`, `tuesday`, `wed`, `friday`
+- Abbreviations: `mon`, `tue`, `tues`, `wed`, `thu`, `thurs`, `fri`, `sat`, `sun`
+- Next week: `next monday`, `next tues`
 - ISO format: `2025-01-15`
 
 **Priority:** `low`, `normal`, `high`
