@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Utility Explorer (`ue`) is a personal productivity CLI designed to help with ADHD executive function support. It aggregates signals from multiple sources (Gmail, Google Calendar, git commits) into a unified dashboard and provides time-block tracking for recurring activities.
+Utility Explorer (`ue`) is a personal productivity CLI designed to help with ADHD executive function support. It provides time-block tracking for recurring activities. It can optionally aggregate signals from Gmail, Google Calendar, and git commits - all integrations are optional for privacy-focused users who just want task/block tracking.
 
 ## Commands
 
@@ -182,6 +182,7 @@ ue/
 
 **ue/config.py** - Configuration management:
 - `DEMO_MODE` - Checks `UE_DEMO` env var to use separate data directory
+- `is_google_configured()` - Checks if Google credentials.json exists (for optional Google integration)
 - `is_sync_stale()` - Checks if last sync was more than N minutes ago
 - `get_last_sync()` / `set_last_sync()` - Track sync timestamps
 - Defines paths and default workstreams
