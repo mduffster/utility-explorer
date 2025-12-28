@@ -43,9 +43,10 @@ No setup required for basic usage - just start using `ue task`, `ue block`, and 
 Run `ue setup` for detailed instructions, or:
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a project and enable Gmail API + Google Calendar API
-3. Create OAuth credentials (Desktop application)
-4. Save the JSON as `~/.utility-explorer/credentials.json`
-5. Run `ue sync` to authenticate
+3. Configure OAuth consent screen and **push to Production** (avoids 7-day token expiration)
+4. Create OAuth credentials (Desktop application)
+5. Save the JSON as `~/.utility-explorer/credentials.json`
+6. Run `ue sync` to authenticate
 
 **Optional: AI focus recommendations**
 
