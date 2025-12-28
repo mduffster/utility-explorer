@@ -24,17 +24,26 @@ def parse_due_date(due: str) -> str:
     today = datetime.now().date()
 
     day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-    day_abbrevs = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+    # Map all common abbreviations to day index (0=Monday, 6=Sunday)
+    day_abbrevs_map = {
+        "mon": 0,
+        "tue": 1, "tues": 1,
+        "wed": 2, "weds": 2,
+        "thu": 3, "thur": 3, "thurs": 3,
+        "fri": 4,
+        "sat": 5,
+        "sun": 6,
+    }
 
     if due_lower == "today":
         return today.isoformat()
     elif due_lower == "tomorrow":
         return (today + timedelta(days=1)).isoformat()
     elif due_lower.startswith("next "):
-        # Handle "next monday", "next wed", etc.
+        # Handle "next monday", "next wed", "next tues", etc.
         day_part = due_lower[5:]  # Remove "next "
-        if day_part in day_abbrevs:
-            target_day = day_abbrevs.index(day_part)
+        if day_part in day_abbrevs_map:
+            target_day = day_abbrevs_map[day_part]
         elif day_part in day_names:
             target_day = day_names.index(day_part)
         else:
@@ -45,10 +54,10 @@ def parse_due_date(due: str) -> str:
             days_ahead += 7
         days_ahead += 7  # Add a week for "next"
         return (today + timedelta(days=days_ahead)).isoformat()
-    elif due_lower in day_names or due_lower in day_abbrevs:
+    elif due_lower in day_names or due_lower in day_abbrevs_map:
         # Find next occurrence of that day
-        if due_lower in day_abbrevs:
-            target_day = day_abbrevs.index(due_lower)
+        if due_lower in day_abbrevs_map:
+            target_day = day_abbrevs_map[due_lower]
         else:
             target_day = day_names.index(due_lower)
         days_ahead = target_day - today.weekday()

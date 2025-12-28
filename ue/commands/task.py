@@ -164,6 +164,57 @@ def task_cancel(task_id):
     console.print(f"[yellow]Task #{task_id} cancelled[/yellow]")
 
 
+@task.command("edit")
+@click.argument("task_id", type=int)
+@click.option("--title", "-t", help="New title")
+@click.option("--due", "-d", help="New due date (or 'none' to clear)")
+@click.option("--workstream", "-w", help="New workstream (or 'none' to clear)")
+@click.option("--priority", "-p", type=click.Choice(["low", "normal", "high"]), help="New priority")
+@click.option("--notes", "-n", help="New notes")
+def task_edit(task_id, title, due, workstream, priority, notes):
+    """Edit an existing task."""
+    from ue.db import get_task, update_task
+
+    task = get_task(task_id)
+    if not task:
+        console.print(f"[red]Task #{task_id} not found[/red]")
+        return
+
+    # Handle 'none' values for clearing fields
+    clear_due = due and due.lower() == "none"
+    clear_workstream = workstream and workstream.lower() == "none"
+
+    # Parse due date if provided and not clearing
+    due_date = None
+    if due and not clear_due:
+        due_date = parse_due_date(due)
+
+    # Don't pass workstream if clearing
+    ws_value = None if clear_workstream else workstream
+
+    updated = update_task(
+        task_id,
+        title=title,
+        due_date=due_date,
+        workstream=ws_value,
+        priority=priority,
+        notes=notes,
+        clear_due=clear_due,
+        clear_workstream=clear_workstream,
+    )
+
+    if updated:
+        console.print(f"[green]Task #{task_id} updated[/green]")
+        # Show current state
+        task = get_task(task_id)
+        console.print(f"  Title: {task['title']}")
+        console.print(f"  Due: {task['due_date'] or '-'}")
+        console.print(f"  Priority: {task['priority']}")
+        console.print(f"  Workstream: {task['workstream'] or '-'}")
+    else:
+        console.print(f"[yellow]No changes made to task #{task_id}[/yellow]")
+
+
 # Standalone done command for interactive task completion
 @click.command("done")
 def done():

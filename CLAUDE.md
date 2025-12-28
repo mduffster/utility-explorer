@@ -37,10 +37,12 @@ ue task add        # Interactive task creation (prompts for name, priority, work
 ue task add "title" -d tomorrow -p high -w ai-research  # Add with options
 ue task add        # Interactive mode (no args)
 ue task list       # List pending tasks
+ue task edit 5 -d friday -p high  # Edit task (title, due, priority, workstream, notes)
+ue task edit 5 -d none    # Clear due date (use 'none')
 ue task done 5     # Mark task #5 complete
 ue task cancel 5   # Cancel task #5
 ```
-Due dates support natural language: `today`, `tomorrow`, `wed`, `friday`, `next monday`, `next wed`, or `YYYY-MM-DD`.
+Due dates support natural language: `today`, `tomorrow`, `tue`, `tues`, `wed`, `thurs`, `friday`, `next monday`, `next tues`, or `YYYY-MM-DD`.
 
 ### Block Tracking
 ```bash
@@ -111,7 +113,7 @@ All data lives in `~/.utility-explorer/` (or `~/.utility-explorer-demo/` in demo
 ue/
 ├── cli.py              # Main CLI group + setup command + imports
 ├── commands/
-│   ├── task.py         # task group (add, list, done, cancel) + done standalone
+│   ├── task.py         # task group (add, list, edit, done, cancel) + done standalone
 │   ├── block.py        # block group (done, skip, partial, target, list) + did standalone
 │   ├── routines.py     # am, pm, status, focus, review
 │   ├── sync.py         # sync, dashboard, d, inbox, calendar, activity, add_repo
