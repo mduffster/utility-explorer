@@ -7,41 +7,44 @@ from ue.utils.display import console
 def run_sync(days: int = 7, quiet: bool = False):
     """Run sync and record timestamp. Used by sync command and auto-sync."""
     from datetime import datetime
-    from ue.inbox.gmail import sync_gmail_inbox, sync_gmail_sent
-    from ue.inbox.calendar import sync_calendar
     from ue.activity.git import sync_git_commits
-    from ue.config import set_last_sync
+    from ue.config import set_last_sync, is_google_configured
 
     if not quiet:
         console.print("[bold]Syncing...[/bold]\n")
 
-    try:
-        result = sync_gmail_inbox(days=days)
-        if not quiet:
-            console.print(f"  Gmail inbox: {result['fetched']} emails")
-    except Exception as e:
-        if not quiet:
-            console.print(f"  [red]Gmail inbox error: {e}[/red]")
+    # Only sync Google services if credentials are configured
+    if is_google_configured():
+        from ue.inbox.gmail import sync_gmail_inbox, sync_gmail_sent
+        from ue.inbox.calendar import sync_calendar
 
-    try:
-        result = sync_gmail_sent(days=days)
-        skipped = result.get('skipped', 0)
-        if not quiet:
-            msg = f"  Gmail sent: {result['logged']} emails logged"
-            if skipped:
-                msg += f" ({skipped} already synced)"
-            console.print(msg)
-    except Exception as e:
-        if not quiet:
-            console.print(f"  [red]Gmail sent error: {e}[/red]")
+        try:
+            result = sync_gmail_inbox(days=days)
+            if not quiet:
+                console.print(f"  Gmail inbox: {result['fetched']} emails")
+        except Exception as e:
+            if not quiet:
+                console.print(f"  [red]Gmail inbox error: {e}[/red]")
 
-    try:
-        result = sync_calendar(days_ahead=days)
-        if not quiet:
-            console.print(f"  Calendar: {result['fetched']} events")
-    except Exception as e:
-        if not quiet:
-            console.print(f"  [red]Calendar error: {e}[/red]")
+        try:
+            result = sync_gmail_sent(days=days)
+            skipped = result.get('skipped', 0)
+            if not quiet:
+                msg = f"  Gmail sent: {result['logged']} emails logged"
+                if skipped:
+                    msg += f" ({skipped} already synced)"
+                console.print(msg)
+        except Exception as e:
+            if not quiet:
+                console.print(f"  [red]Gmail sent error: {e}[/red]")
+
+        try:
+            result = sync_calendar(days_ahead=days)
+            if not quiet:
+                console.print(f"  Calendar: {result['fetched']} events")
+        except Exception as e:
+            if not quiet:
+                console.print(f"  [red]Calendar error: {e}[/red]")
 
     try:
         result = sync_git_commits(since_days=days)
@@ -107,6 +110,10 @@ def dashboard_short():
 @click.option("--limit", "-n", default=20, help="Number of items to show")
 def inbox(limit):
     """Show email inbox."""
+    from ue.config import is_google_configured
+    if not is_google_configured():
+        console.print("[dim]Gmail not configured. Run 'ue setup' for instructions.[/dim]")
+        return
     from ue.dashboard import show_inbox
     show_inbox(source="gmail", limit=limit)
 
@@ -115,6 +122,10 @@ def inbox(limit):
 @click.option("--days", "-d", default=7, help="Days ahead to show")
 def calendar(days):
     """Show upcoming calendar events."""
+    from ue.config import is_google_configured
+    if not is_google_configured():
+        console.print("[dim]Google Calendar not configured. Run 'ue setup' for instructions.[/dim]")
+        return
     from ue.dashboard import show_calendar
     show_calendar(days=days)
 

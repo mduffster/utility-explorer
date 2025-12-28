@@ -87,23 +87,25 @@ def am():
     else:
         console.print("\n[green]All blocks on track[/green]")
 
-    # Today's calendar
-    console.print("\n[bold]TODAY'S CALENDAR[/bold]")
-    try:
-        events = get_upcoming_events(hours=12)
-        if events:
-            for event in events[:8]:
-                start = event.get("start", {})
-                time_str = ""
-                if "dateTime" in start:
-                    dt = datetime.fromisoformat(start["dateTime"].replace("Z", "+00:00"))
-                    time_str = dt.strftime("%I:%M %p")
-                summary = event.get("summary", "(no title)")
-                console.print(f"  {time_str:>8}  {summary}")
-        else:
-            console.print("  [dim]No events today[/dim]")
-    except Exception as e:
-        console.print(f"  [dim]Could not fetch calendar: {e}[/dim]")
+    # Today's calendar (only if Google is configured)
+    from ue.config import is_google_configured
+    if is_google_configured():
+        console.print("\n[bold]TODAY'S CALENDAR[/bold]")
+        try:
+            events = get_upcoming_events(hours=12)
+            if events:
+                for event in events[:8]:
+                    start = event.get("start", {})
+                    time_str = ""
+                    if "dateTime" in start:
+                        dt = datetime.fromisoformat(start["dateTime"].replace("Z", "+00:00"))
+                        time_str = dt.strftime("%I:%M %p")
+                    summary = event.get("summary", "(no title)")
+                    console.print(f"  {time_str:>8}  {summary}")
+            else:
+                console.print("  [dim]No events today[/dim]")
+        except Exception as e:
+            console.print(f"  [dim]Could not fetch calendar: {e}[/dim]")
 
     # Inbox needing response
     needs_response = get_inbox_items(needs_response=True, limit=5)
