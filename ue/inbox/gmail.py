@@ -34,9 +34,9 @@ def sync_gmail_inbox(days: int = 7, max_results: int = 50) -> dict:
     """
     service = get_gmail_service()
 
-    # Calculate date filter
+    # Calculate date filter - only fetch primary inbox (skip Promotions, Social, etc.)
     after_date = (datetime.now() - timedelta(days=days)).strftime("%Y/%m/%d")
-    query = f"in:inbox after:{after_date}"
+    query = f"in:inbox category:primary after:{after_date}"
 
     results = service.users().messages().list(
         userId="me",
