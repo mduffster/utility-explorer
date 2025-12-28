@@ -30,6 +30,11 @@ def ensure_data_dir():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def is_google_configured() -> bool:
+    """Check if Google credentials are set up."""
+    return CREDENTIALS_PATH.exists()
+
+
 def load_config() -> dict:
     """Load user configuration."""
     ensure_data_dir()
