@@ -303,9 +303,10 @@ def get_week_block_summary(block_name: str) -> dict:
     """Get this week's completion count for a block."""
     db = get_db()
     from datetime import timedelta
+    from ue.utils.dates import get_effective_date
 
-    # Get start of current week (Monday)
-    today = datetime.now().date()
+    # Get start of current week (Monday), using effective date (2am boundary)
+    today = get_effective_date()
     week_start = today - timedelta(days=today.weekday())
 
     row = db.execute(
@@ -506,6 +507,36 @@ def get_tasks_completed_since(since: str) -> list[dict]:
         ORDER BY completed_at DESC
         """,
         (since,),
+    ).fetchall()
+    db.close()
+    return [dict(row) for row in rows]
+
+
+def get_tasks_created_since(since: str) -> list[dict]:
+    """Get all tasks created since a given date."""
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT * FROM tasks
+        WHERE created_at >= ?
+        ORDER BY created_at DESC
+        """,
+        (since,),
+    ).fetchall()
+    db.close()
+    return [dict(row) for row in rows]
+
+
+def get_block_completions_range(start: str, end: str) -> list[dict]:
+    """Get block completions within a date range (inclusive)."""
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT * FROM block_completions
+        WHERE date >= ? AND date <= ?
+        ORDER BY date DESC, block_name
+        """,
+        (start, end),
     ).fetchall()
     db.close()
     return [dict(row) for row in rows]

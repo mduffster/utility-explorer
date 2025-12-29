@@ -70,6 +70,8 @@ ue pm            # Evening review
 | `ue am` | Morning standup - overdue tasks, at-risk blocks, today's calendar |
 | `ue pm` | Evening review - interactive block check-in, log wins |
 | `ue status` | Week-to-date progress on blocks and tasks |
+| `ue week` | Weekly review - completion rates, streaks, wins, trends |
+| `ue month` | Monthly review - 4-week trends, velocity, patterns |
 | `ue dashboard` | Main dashboard (alias: `ue d`) |
 | `ue focus` | AI recommendation for what to focus on now |
 

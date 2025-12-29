@@ -23,6 +23,8 @@ ue dashboard       # Main dashboard (or ue d)
 ue am              # Morning standup - shows overdue tasks, at-risk blocks, calendar, commits
 ue pm              # Evening review - interactive block check-in and win logging
 ue review          # Alias for pm
+ue week            # Weekly review - completion rates, streaks, wins, trends
+ue month           # Monthly review - 4-week trends, velocity, patterns
 ```
 
 ### Interactive Quick Actions
@@ -116,6 +118,7 @@ ue/
 │   ├── task.py         # task group (add, list, edit, done, cancel) + done standalone
 │   ├── block.py        # block group (done, skip, partial, target, list) + did standalone
 │   ├── routines.py     # am, pm, status, focus, review
+│   ├── review.py       # week, month - weekly/monthly review commands
 │   ├── sync.py         # sync, dashboard, d, inbox, calendar, activity, add_repo
 │   ├── log.py          # log group (application, win) + mark group (respond, done, workstream)
 │   ├── workstream.py   # workstream group (add, list, remove, set)
@@ -136,12 +139,20 @@ ue/
 
 **ue/utils/analysis.py** - Block analysis:
 - `get_at_risk_blocks()` - Calculates block status (impossible, at_risk, try_to_do, daily_pending)
+- `calculate_block_streak()` - Counts consecutive completion days for a block
+- `calculate_completion_rate()` - Calculates percentage of target achieved
+- `compare_weeks()` - Returns trend indicator (↑, ↓, →) comparing two values
+- `get_week_bounds()` - Gets Monday/Sunday of a week relative to a date
 
 **ue/commands/sync.py** - Sync and display commands:
 - `run_sync()` - Core sync logic
 - `auto_sync_if_stale()` - Auto-syncs if data is older than 1 hour
 
 **ue/commands/routines.py** - Daily routine commands (am, pm, status, focus, review)
+
+**ue/commands/review.py** - Weekly and monthly review commands:
+- `week` - Shows block performance, streaks, task summary, wins, activity breakdown
+- `month` - Shows 4-week block trends, task velocity, wins, workstream distribution
 
 **ue/commands/task.py** - Task management commands
 

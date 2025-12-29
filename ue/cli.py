@@ -91,6 +91,7 @@ from ue.commands.log import log, mark
 from ue.commands.demo import demo_setup, demo_reset
 from ue.commands.workstream import workstream
 from ue.commands.git_cmd import git
+from ue.commands.review import week, month
 
 # Sync/display commands
 cli.add_command(sync)
@@ -115,6 +116,10 @@ cli.add_command(pm)
 cli.add_command(review)
 cli.add_command(status)
 cli.add_command(focus)
+
+# Review commands
+cli.add_command(week)
+cli.add_command(month)
 
 # Log/mark commands
 cli.add_command(log)
