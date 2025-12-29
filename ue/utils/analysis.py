@@ -1,6 +1,6 @@
-"""Analysis utilities - block risk calculations, etc."""
+"""Analysis utilities - block risk calculations, streak tracking, etc."""
 
-from datetime import timedelta
+from datetime import timedelta, date
 
 from ue.utils.dates import get_effective_date
 
@@ -107,3 +107,97 @@ def get_at_risk_blocks():
         # No workstream and not urgent = don't show
 
     return at_risk
+
+
+def calculate_block_streak(block_name: str, completions: list[dict]) -> int:
+    """Calculate current consecutive completion streak for a block.
+
+    Args:
+        block_name: Name of the block to check
+        completions: List of completion records (must include 'date' and 'status')
+
+    Returns:
+        Number of consecutive days with 'completed' status, counting back from today
+    """
+    # Filter to this block and completed status
+    block_completions = [
+        c for c in completions
+        if c["block_name"] == block_name and c["status"] == "completed"
+    ]
+
+    if not block_completions:
+        return 0
+
+    # Get unique completion dates
+    completion_dates = set(c["date"] for c in block_completions)
+
+    # Count consecutive days back from today
+    today = get_effective_date()
+    streak = 0
+    check_date = today
+
+    while check_date.isoformat() in completion_dates:
+        streak += 1
+        check_date = check_date - timedelta(days=1)
+
+    return streak
+
+
+def calculate_completion_rate(completed: int, target: int, days: int) -> float:
+    """Calculate completion rate as a percentage.
+
+    Args:
+        completed: Number of completions
+        target: Weekly target (0 = daily)
+        days: Number of days in the period
+
+    Returns:
+        Percentage (0-100) of target achieved
+    """
+    if target == 0:
+        # Daily block - rate is completions / days
+        if days == 0:
+            return 0.0
+        return (completed / days) * 100
+    else:
+        # Weekly block - rate is completions / target
+        if target == 0:
+            return 0.0
+        return (completed / target) * 100
+
+
+def compare_weeks(current: int, previous: int) -> str:
+    """Return trend indicator comparing two values.
+
+    Args:
+        current: Current week's count
+        previous: Previous week's count
+
+    Returns:
+        Trend string like "↑ (+2)", "↓ (-1)", or "→ (same)"
+    """
+    diff = current - previous
+    if diff > 0:
+        return f"↑ (+{diff})"
+    elif diff < 0:
+        return f"↓ ({diff})"
+    else:
+        return "→ (same)"
+
+
+def get_week_bounds(reference_date: date, weeks_ago: int = 0) -> tuple[date, date]:
+    """Get the Monday and Sunday of a week relative to reference date.
+
+    Args:
+        reference_date: The date to calculate from
+        weeks_ago: How many weeks back (0 = current week)
+
+    Returns:
+        Tuple of (monday, sunday) as date objects
+    """
+    # Get to the Monday of the reference week
+    monday = reference_date - timedelta(days=reference_date.weekday())
+    # Go back N weeks
+    monday = monday - timedelta(weeks=weeks_ago)
+    sunday = monday + timedelta(days=6)
+    return monday, sunday

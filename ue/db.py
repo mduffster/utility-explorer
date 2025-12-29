@@ -509,3 +509,33 @@ def get_tasks_completed_since(since: str) -> list[dict]:
     ).fetchall()
     db.close()
     return [dict(row) for row in rows]
+
+
+def get_tasks_created_since(since: str) -> list[dict]:
+    """Get all tasks created since a given date."""
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT * FROM tasks
+        WHERE created_at >= ?
+        ORDER BY created_at DESC
+        """,
+        (since,),
+    ).fetchall()
+    db.close()
+    return [dict(row) for row in rows]
+
+
+def get_block_completions_range(start: str, end: str) -> list[dict]:
+    """Get block completions within a date range (inclusive)."""
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT * FROM block_completions
+        WHERE date >= ? AND date <= ?
+        ORDER BY date DESC, block_name
+        """,
+        (start, end),
+    ).fetchall()
+    db.close()
+    return [dict(row) for row in rows]
