@@ -303,9 +303,10 @@ def get_week_block_summary(block_name: str) -> dict:
     """Get this week's completion count for a block."""
     db = get_db()
     from datetime import timedelta
+    from ue.utils.dates import get_effective_date
 
-    # Get start of current week (Monday)
-    today = datetime.now().date()
+    # Get start of current week (Monday), using effective date (2am boundary)
+    today = get_effective_date()
     week_start = today - timedelta(days=today.weekday())
 
     row = db.execute(
