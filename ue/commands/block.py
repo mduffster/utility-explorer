@@ -155,31 +155,52 @@ def block_list():
     console.print(table)
 
 
-# Standalone did command for interactive block completion
+# Standalone did command for block completion
 @click.command("did")
-def did():
-    """Interactive block completion - pick a block you just did."""
-    from rich.prompt import Prompt
+@click.argument("name", required=False, default=None)
+def did(name):
+    """Mark a block as done. Run without args for interactive mode."""
     from ue.db import get_block_targets, get_block_completions, log_block_completion, get_week_block_summary
 
+    today = get_effective_date().isoformat()
     targets = get_block_targets()
 
-    if not targets:
+    if not targets and not name:
         console.print("[dim]No blocks configured. Use 'ue block target <name> <weekly_count>'[/dim]")
         return
 
-    today = get_effective_date().isoformat()
+    # If name provided, mark it directly (case-insensitive match)
+    if name:
+        # Find matching block (case-insensitive)
+        matched = None
+        for t in targets:
+            if t["block_name"].lower() == name.lower():
+                matched = t["block_name"]
+                break
+
+        if matched:
+            log_block_completion(matched, today, "completed")
+            console.print(f"[green]Logged: {matched} ✓[/green]")
+        else:
+            # No match - log with provided name (creates new if doesn't exist)
+            log_block_completion(name, today, "completed")
+            console.print(f"[green]Logged: {name} ✓[/green]")
+        return
+
+    # Interactive mode
+    from rich.prompt import Prompt
+
     today_completions = {c["block_name"]: c for c in get_block_completions(since=today)}
 
     console.print("\n[bold]Blocks:[/bold]\n")
     for i, t in enumerate(targets, 1):
-        name = t["block_name"]
+        block_name = t["block_name"]
         weekly = t["weekly_target"]
-        summary = get_week_block_summary(name)
+        summary = get_week_block_summary(block_name)
 
         # Status indicator
-        if name in today_completions:
-            status = today_completions[name]["status"]
+        if block_name in today_completions:
+            status = today_completions[block_name]["status"]
             if status == "completed":
                 status_str = " [green]✓ done today[/green]"
             elif status == "skipped":
@@ -195,7 +216,7 @@ def did():
         else:
             progress = f"[dim]({summary['completed']}/{weekly} this week)[/dim]"
 
-        console.print(f"  {i}. {name} {progress}{status_str}")
+        console.print(f"  {i}. {block_name} {progress}{status_str}")
 
     console.print()
     choice = Prompt.ask(
