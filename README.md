@@ -6,7 +6,7 @@ It can optionally aggregate info from Gmail, Google Calendar, and git into a uni
 
 ## Demo
 
-[![asciicast](https://asciinema.org/a/hfLqMm2NE0cGyEeyu6yytwMka.svg)](https://asciinema.org/a/hfLqMm2NE0cGyEeyu6yytwMka)
+[![asciicast](https://asciinema.org/a/papsTVOjHHyyYMZf4npCfwFPg.svg)](https://asciinema.org/a/papsTVOjHHyyYMZf4npCfwFPg)
 
 ## Features
 
