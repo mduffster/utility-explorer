@@ -86,7 +86,7 @@ from ue.commands.sync import (
 )
 from ue.commands.task import task, done
 from ue.commands.block import block, did
-from ue.commands.routines import am, pm, review, status, focus
+from ue.commands.routines import am, pm, review, status, focus, catchup
 from ue.commands.log import log, mark
 from ue.commands.demo import demo_setup, demo_reset
 from ue.commands.workstream import workstream
@@ -116,6 +116,7 @@ cli.add_command(pm)
 cli.add_command(review)
 cli.add_command(status)
 cli.add_command(focus)
+cli.add_command(catchup)
 
 # Review commands
 cli.add_command(week)

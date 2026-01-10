@@ -201,3 +201,45 @@ def get_week_bounds(reference_date: date, weeks_ago: int = 0) -> tuple[date, dat
     monday = monday - timedelta(weeks=weeks_ago)
     sunday = monday + timedelta(days=6)
     return monday, sunday
+
+
+def get_consecutive_missed_days(max_lookback: int = 14) -> list[date]:
+    """Find consecutive days with no block completions before today.
+
+    Looks backwards from yesterday, counting consecutive days with zero
+    block completions. Stops at the first day that has any completion.
+
+    Args:
+        max_lookback: Maximum number of days to look back
+
+    Returns:
+        List of dates (oldest first) with no completions, or empty list
+    """
+    from ue.db import get_block_completions, get_block_targets
+
+    # Need at least one block target to check for missed days
+    targets = get_block_targets()
+    if not targets:
+        return []
+
+    today = get_effective_date()
+    missed_days = []
+
+    # Start from yesterday and work backwards
+    for days_ago in range(1, max_lookback + 1):
+        check_date = today - timedelta(days=days_ago)
+        check_date_str = check_date.isoformat()
+
+        # Get completions for this specific day
+        completions = get_block_completions(since=check_date_str)
+        day_completions = [c for c in completions if c["date"] == check_date_str]
+
+        if day_completions:
+            # Found a day with activity - stop looking
+            break
+        else:
+            # No activity on this day
+            missed_days.append(check_date)
+
+    # Return oldest first
+    return list(reversed(missed_days))

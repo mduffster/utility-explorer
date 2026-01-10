@@ -72,6 +72,7 @@ ue pm            # Evening review
 | `ue status` | Week-to-date progress on blocks and tasks |
 | `ue week` | Weekly review - completion rates, streaks, wins, trends |
 | `ue month` | Monthly review - 4-week trends, velocity, patterns |
+| `ue catchup` | Log blocks for days you missed |
 | `ue dashboard` | Main dashboard (alias: `ue d`) |
 | `ue focus` | AI recommendation for what to focus on now |
 

@@ -25,6 +25,7 @@ ue pm              # Evening review - interactive block check-in and win logging
 ue review          # Alias for pm
 ue week            # Weekly review - completion rates, streaks, wins, trends
 ue month           # Monthly review - 4-week trends, velocity, patterns
+ue catchup         # Log blocks for days you missed
 ```
 
 ### Interactive Quick Actions
@@ -143,12 +144,13 @@ ue/
 - `calculate_completion_rate()` - Calculates percentage of target achieved
 - `compare_weeks()` - Returns trend indicator (↑, ↓, →) comparing two values
 - `get_week_bounds()` - Gets Monday/Sunday of a week relative to a date
+- `get_consecutive_missed_days()` - Finds consecutive days with no block completions before today
 
 **ue/commands/sync.py** - Sync and display commands:
 - `run_sync()` - Core sync logic
 - `auto_sync_if_stale()` - Auto-syncs if data is older than 1 hour
 
-**ue/commands/routines.py** - Daily routine commands (am, pm, status, focus, review)
+**ue/commands/routines.py** - Daily routine commands (am, pm, status, focus, review, catchup)
 
 **ue/commands/review.py** - Weekly and monthly review commands:
 - `week` - Shows block performance, streaks, task summary, wins, activity breakdown

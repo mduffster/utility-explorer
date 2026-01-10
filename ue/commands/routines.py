@@ -149,6 +149,9 @@ def am():
             console.print("  [dim]Run 'ue add-repo <path>' or 'gh auth login'[/dim]")
             console.print("  [dim]('ue git dismiss' to hide this)[/dim]")
 
+    # Check for missed days
+    show_catchup_hint()
+
     # Suggested focus
     console.print("\n[bold]SUGGESTED FOCUS[/bold]")
     if at_risk:
@@ -265,6 +268,9 @@ def pm():
         for block in at_risk[:2]:
             console.print(f"  [yellow]{block['name']}: {block['remaining']} remaining, {block['days_left']} days left[/yellow]")
 
+    # Check for missed days
+    show_catchup_hint()
+
     console.print("\n[magenta]Good night![/magenta]\n")
 
 
@@ -379,6 +385,9 @@ def status():
     else:
         console.print(f"\n[green]All tasks complete![/green]")
 
+    # Check for missed days
+    show_catchup_hint()
+
     console.print()
 
 
@@ -403,3 +412,134 @@ def focus(copy_mode):
     except Exception as e:
         console.print(f"[red]Error calling API: {e}[/red]")
         console.print("[dim]Try --copy mode to use claude.ai instead[/dim]")
+
+
+def show_catchup_hint():
+    """Show hint about missed days if any consecutive days have no activity."""
+    from ue.utils.analysis import get_consecutive_missed_days
+
+    missed = get_consecutive_missed_days()
+    if not missed:
+        return
+
+    if len(missed) == 1:
+        day_str = missed[0].strftime("%b %d")
+        console.print(f"\n[dim]You didn't log activity on {day_str}. Run 'ue catchup' to log.[/dim]")
+    else:
+        first = missed[0].strftime("%b %d")
+        last = missed[-1].strftime("%b %d")
+        console.print(f"\n[dim]You didn't log activity on {first} - {last}. Run 'ue catchup' to log.[/dim]")
+
+
+@click.command()
+def catchup():
+    """Log blocks for days you missed."""
+    from rich.prompt import Prompt
+    from rich.panel import Panel
+    from ue.utils.analysis import get_consecutive_missed_days
+    from ue.db import get_block_targets, get_block_completions, log_block_completion
+    from ue.activity.manual import log_win
+
+    missed = get_consecutive_missed_days()
+
+    if not missed:
+        console.print("\n[green]No missed days to catch up on![/green]\n")
+        return
+
+    console.print()
+    console.print(Panel("[bold]Catch Up[/bold] - Log blocks for missed days", style="cyan"))
+
+    # Show missed days and let user pick which to review
+    console.print("\n[bold]Days with no activity:[/bold]\n")
+    for i, day in enumerate(missed, 1):
+        day_name = day.strftime("%A")
+        day_str = day.strftime("%b %d")
+        console.print(f"  {i}. {day_name}, {day_str}")
+
+    console.print()
+    console.print("[dim]Enter numbers to review (e.g., '1,3' or '1-3' or 'all'), or 'q' to quit[/dim]")
+    choice = Prompt.ask("Which days?", default="all")
+
+    if choice.lower() == 'q':
+        return
+
+    # Parse selection
+    selected_indices = set()
+    if choice.lower() == 'all':
+        selected_indices = set(range(len(missed)))
+    else:
+        for part in choice.split(','):
+            part = part.strip()
+            if '-' in part:
+                try:
+                    start, end = part.split('-')
+                    for i in range(int(start) - 1, int(end)):
+                        if 0 <= i < len(missed):
+                            selected_indices.add(i)
+                except ValueError:
+                    pass
+            else:
+                try:
+                    idx = int(part) - 1
+                    if 0 <= idx < len(missed):
+                        selected_indices.add(idx)
+                except ValueError:
+                    pass
+
+    if not selected_indices:
+        console.print("[dim]No valid days selected[/dim]")
+        return
+
+    selected_days = [missed[i] for i in sorted(selected_indices)]
+    targets = get_block_targets()
+
+    # Review each selected day
+    for day in selected_days:
+        day_name = day.strftime("%A")
+        day_str = day.strftime("%b %d")
+        date_iso = day.isoformat()
+
+        console.print()
+        console.print(Panel(f"[bold]{day_name}, {day_str}[/bold]", style="yellow"))
+
+        # Get any existing completions for this day (shouldn't be any, but check)
+        day_completions = {
+            c["block_name"]: c
+            for c in get_block_completions(since=date_iso)
+            if c["date"] == date_iso
+        }
+
+        for target in targets:
+            name = target["block_name"]
+
+            if name in day_completions:
+                status = day_completions[name]["status"]
+                console.print(f"  [dim]{name}: {status}[/dim]")
+                continue
+
+            response = Prompt.ask(
+                f"  {name}",
+                choices=["done", "skip", "partial", "n/a"],
+                default="n/a"
+            )
+
+            if response == "done":
+                log_block_completion(name, date_iso, "completed")
+                console.print(f"    [green]done[/green]")
+            elif response == "skip":
+                reason = Prompt.ask("    Why?", default="")
+                log_block_completion(name, date_iso, "skipped", reason=reason if reason else None)
+                console.print(f"    [yellow]skipped[/yellow]")
+            elif response == "partial":
+                reason = Prompt.ask("    What happened?", default="")
+                log_block_completion(name, date_iso, "partial", reason=reason if reason else None)
+                console.print(f"    [blue]partial[/blue]")
+            # n/a = don't log anything
+
+        # Ask about wins for this day
+        win = Prompt.ask(f"  Any wins on {day_str}? (or enter to skip)", default="")
+        if win:
+            log_win(win)
+            console.print(f"    [green]logged![/green]")
+
+    console.print("\n[green]Catch-up complete![/green]\n")
